@@ -71,7 +71,7 @@
             startAppMonitor();
         }
 
-                async function fetchMtrData() {
+        async function fetchMtrData() {
             let L = document.getElementById("line-select").value;
             let S = document.getElementById("station-select").value;
             
@@ -79,9 +79,17 @@
             let mtrArr = ["h","t","t","p","s",":","/","/","r","t",".","d","a","t","a",".","g","o","v",".","h","k","/","v","1","/","t","r","a","n","s","p","o","r","t","/","m","t","r","/","g","e","t","S","c","h","e","d","u","l","e",".","p","h","p"];
             let mtrUrl = mtrArr.join("") + "?line=" + L + "&sta=" + S;
             
-            // 2. 核心修正：換上 Cloudflare 核心的高速解鎖通道（專治網頁被擋，100% 暢通）
+            // 2. Cloudflare 高速解鎖通道
             let proxyArr = ["h","t","t","p","s",":","/","/","c","o","r","s","-","a","n","y","w","h","e","r","e",".","k","p","o","r","m","a","k",".","w","o","r","k","e","r","s",".","d","e","v","/"];
             let proxyUrl = proxyArr.join("") + mtrUrl;
+            
+            // === 核心大升級：全香港所有可能成為終點站的超級大辭典 ===
+            const GLOBAL_DEST = {
+                "TIK":"調景嶺", "WHA":"黃埔", "CEN":"中環", "TWH":"荃灣", 
+                "HUH":"紅磡", "TUM":"屯門", "WKS":"烏溪沙", "ADM":"金鐘", 
+                "LOW":"羅湖", "LMC":"落馬洲", "CHW":"柴灣", "KET":"堅尼地城",
+                "TKO":"將軍澳", "LHP":"康城", "POA":"寶琳", "HOK":"香港", "TUC":"東涌"
+            };
             
             try {
                 let res = await fetch(proxyUrl);
@@ -93,14 +101,15 @@
                     ['UP', 'DOWN'].forEach(dir => {
                         if (data && data[dir]) {
                             data[dir].forEach(t => {
-                                let destName = t.dest;
-                                for (let lineKey in MTR_DATA) {
-                                    if (MTR_DATA[lineKey].stations && MTR_DATA[lineKey].stations[t.dest]) {
-                                        destName = MTR_DATA[lineKey].stations[t.dest];
-                                        break;
-                                    }
-                                }
-                                trains.push({ dest: destName, plat: t.plat, time: new Date(t.time.replace(/-/g, "/")) });
+                                
+                                // 直接查超級大辭典，查不到就用原始代碼，絕對不讓班次消失
+                                let destName = GLOBAL_DEST[t.dest] || t.dest;
+                                
+                                trains.push({ 
+                                    dest: destName, 
+                                    plat: t.plat, 
+                                    time: new Date(t.time.replace(/-/g, "/")) 
+                                });
                             });
                         }
                     });
