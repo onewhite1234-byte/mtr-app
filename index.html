@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="zh-HK">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>港鐵全車站精確秒表 App</title>
+    <style>
+        body { background: #1c1c1e; color: #ffffff; font-family: -apple-system, sans-serif; margin: 0; padding: 15px; }
+        .app-header { text-align: center; font-size: 20px; font-weight: bold; padding: 15px 0; color: #ffd700; border-bottom: 1px solid #2c2c2e; }
+        .picker-box { background: #2c2c2e; border-radius: 10px; padding: 15px; margin: 15px 0; display: flex; gap: 10px; }
+        select { flex: 1; padding: 12px; background: #1c1c1e; color: #fff; border: 1px solid #444; border-radius: 8px; font-size: 16px; font-weight: bold; }
+        .mtr-panel { background: #000000; border-radius: 12px; padding: 20px; box-shadow: 0 4px 12px rgba(0,0,0,0.5); border: 1px solid #3a3a3c; min-height: 150px; }
+        .panel-title { color: #ffd700; font-size: 16px; font-weight: bold; margin-bottom: 15px; border-bottom: 2px solid #ffd700; padding-bottom: 5px; }
+        .train-card { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid #1c1c1e; }
+        .train-card:last-child { border-bottom: none; }
+        .direction { font-size: 18px; font-weight: bold; }
+        .platform { font-size: 12px; color: #8e8e93; margin-top: 3px; }
+        .countdown { color: #ff9500; font-family: monospace; font-size: 24px; font-weight: bold; }
+        .loading-text { text-align: center; color: #8e8e93; font-style: italic; padding: 40px 0; }
+    </style>
+</head>
+<body>
+
+    <div class="app-header">🚇 MTR 精確秒表 App</div>
+    
+    <div class="picker-box">
+        <select id="line-select" onchange="initStationSelect()"></select>
+        <select id="station-select" onchange="startAppMonitor()"></select>
+    </div>
+
+    <div class="mtr-panel">
+        <div id="panel-title" class="panel-title">請選擇車站</div>
+        <div id="panel-content">
+            <div class="loading-text">請點擊上方選擇路綫與車站</div>
+        </div>
+    </div>
+
+    <script>
+        const MTR_DATA = {
+            "TML": { name: "屯馬綫", stations: {"TUM":"屯門", "SIH":"兆康", "TIS":"天水圍", "YUL":"元朗", "KSR":"錦上路", "TWW":"荃灣西", "MEF":"美孚", "NAC":"南昌", "OLY":"奧運", "AUS":"柯士甸", "ETS":"尖東", "HUH":"紅磡", "HOM":"何文田", "TKW":"土瓜灣", "SUW":"宋皇臺", "CKA":"啟德", "DIH":"鑽石山", "HIK":"顯徑", "TAW":"大圍", "STW":"沙田圍", "CIO":"第一城", "SHM":"石門", "TSH":"大水坑", "HEO":"恆安", "MOS":"馬鞍山", "WKS":"烏溪沙"} },
+            "ISL": { name: "港島綫", stations: {"KET":"堅尼地城", "HKU":"香港大學", "SYP":"西營盤", "SHW":"上環", "CEN":"中環", "ADM":"金鐘", "WAC":"灣仔", "CWB":"銅鑼灣", "TIH":"天后", "FOH":"炮台山", "NPK":"北角", "QUB":"鰂魚涌", "TAK":"太古", "SOH":"西灣河", "SKW":"筲箕灣", "CHW":"柴灣"} },
+            "TWL": { name: "荃灣綫", stations: {"CEN":"中環", "ADM":"金鐘", "TST":"尖沙咀", "JOR":"佐敦", "YMT":"油麻地", "MOK":"旺角", "PRE":"太子", "SSP":"深水埗", "CSW":"長沙灣", "LCK":"荔枝角", "MEF":"美孚", "LAK":"荔景", "KWF":"葵芳", "KWH":"葵興", "TWH":"荃灣"} },
+            "KTL": { name: "觀塘綫", stations: {"WHA":"黃埔", "HOM":"何文田", "YMT":"油麻地", "MOK":"旺角", "PRE":"太子", "SKM":"石硤尾", "KOT":"九龍塘", "LOF":"樂富", "WTS":"黃大仙", "DIH":"鑽石山", "CHH":"彩虹", "KOB":"九龍灣", "APM":"牛頭角", "KWT":"觀塘", "LAT":"藍田", "YAT":"油塘", "TIK":"調景嶺"} },
+            "EAL": { name: "東鐵綫", stations: {"ADM":"金鐘", "EXC":"會展", "HUH":"紅磡", "MKK":"旺角東", "KOT":"九龍塘", "TAW":"大圍", "SHT":"沙田", "FOT":"火炭", "UNI":"大學", "TAP":"大埔墟", "TWO":"太和", "FAN":"粉嶺", "SHS":"上水", "LOW":"羅湖", "LMC":"落馬洲"} },
+            "TKL": { name: "將軍澳綫", stations: {"NPK":"北角", "QUB":"鰂魚涌", "YAT":"油塘", "TIK":"調景嶺", "TKO":"將軍澳", "LHP":"康城", "HAH":"坑口", "POA":"寶琳"} },
+            "TCL": { name: "東涌綫", stations: {"HOK":"香港", "KOW":"九龍", "OLY":"奧運", "NAC":"南昌", "LAK":"荔景", "TSY":"青衣", "SUN":"欣澳", "TUC":"東涌"} },
+            "AEL": { name: "機場快綫", stations: {"HOK":"香港", "KOW":"九龍", "TSY":"青衣", "AIR":"機場", "AWE":"博覽館"} }
+        };
+
+        let trains = [], apiInterval = null, uiInterval = null;
+
+        function initApp() {
+            let lineSelect = document.getElementById("line-select");
+            let html = "";
+            for (let code in MTR_DATA) {
+                html += `<option value="${code}">${MTR_DATA[code].name}</option>`;
+            }
+            lineSelect.innerHTML = html;
+            initStationSelect();
+        }
+
+        function initStationSelect() {
+            let lineCode = document.getElementById("line-select").value;
+            let staSelect = document.getElementById("station-select");
+            let stations = MTR_DATA[lineCode].stations;
+            let html = "";
+            for (let code in stations) {
+                html += `<option value="${code}">${stations[code]}</option>`;
+            }
+            staSelect.innerHTML = html;
+            startAppMonitor();
+        }
+
+        async function fetchMtrData() {
+            let L = document.getElementById("line-select").value;
+            let S = document.getElementById("station-select").value;
+            
+            // GitHub Pages 直連港鐵官方 API，完全免代理、暢通無阻！
+            let mtrUrl = "https://data.gov.hk" + L + "&sta=" + S;
+            
+            try {
+                let res = await fetch(mtrUrl);
+                let json = await res.json(); 
+                trains = [];
+                
+                if (json && json.status === 1 && json.data && json.data[L + "-" + S]) {
+                    let data = json.data[L + "-" + S];
+                    ['UP', 'DOWN'].forEach(dir => {
+                        if (data && data[dir]) {
+                            data[dir].forEach(t => {
+                                let destName = t.dest;
+                                for (let lineKey in MTR_DATA) {
+                                    if (MTR_DATA[lineKey].stations && MTR_DATA[lineKey].stations[t.dest]) {
+                                        destName = MTR_DATA[lineKey].stations[t.dest];
+                                        break;
+                                    }
+                                }
+                                trains.push({ dest: destName, plat: t.plat, time: new Date(t.time.replace(/-/g, "/")) });
+                            });
+                        }
+                    });
+                }
+            } catch (e) { console.error("數據獲取中..."); }
+        }
+
+        function renderUI() {
+            let staSelect = document.getElementById("station-select");
+            let stationName = staSelect.options[staSelect.selectedIndex].text;
+            document.getElementById("panel-title").innerText = `📊 ${stationName} 站 · 即時到站看板`;
+            
+            let now = new Date();
+            let html = "";
+            trains.sort((a, b) => a.time - b.time);
+            
+            trains.forEach(t => {
+                let diff = Math.floor((t.time - now) / 1000);
+                if (diff >= -90) {
+                    let timeText = diff >= 0 ? `${Math.floor(diff/60)}分 ${String(diff%60).padStart(2,'0')}秒` : "列車到站中";
+                    html += `
+                        <div class="train-card">
+                            <div>
+                                <div class="direction">往 ${t.dest}</div>
+                                <div class="platform">${t.plat} 號月台</div>
+                            </div>
+                            <div class="countdown" style="color: ${diff < 0 ? '#52c41a' : '#ff9500'}">${timeText}</div>
+                        </div>
+                    `;
+                }
+            });
+            document.getElementById("panel-content").innerHTML = html || `<div class="loading-text">非營運時間或暫無班次</div>`;
+        }
+
+        function startAppMonitor() {
+            document.getElementById("panel-content").innerHTML = `<div class="loading-text">正在連接港鐵衛星訊號...</div>`;
+            clearInterval(apiInterval); clearInterval(uiInterval);
+            fetchMtrData().then(() => {
+                uiInterval = setInterval(renderUI, 1000);
+            });
+            apiInterval = setInterval(fetchMtrData, 30000);
+        }
+
+        window.onload = initApp;
+    </script>
+</body>
+</html>
