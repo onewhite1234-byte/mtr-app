@@ -192,6 +192,9 @@
                   // ==========================================
         // 🌟 獨立背景功能：真．100% 中央同步與全故障防禦雷達
         // ==========================================
+                // ==========================================
+        // 🌟 獨立背景功能：真．100% 中央狀態鎖與全防禦雷達
+        // ==========================================
         async function fetchMtrStatusNotice() {
             let L = document.getElementById("line-select").value;
             
@@ -207,34 +210,40 @@
                 let alertBar = document.getElementById("mtr-alert-bar");
                 let marquee = document.getElementById("notice-marquee");
                 
-                // 💥 究極防禦核心：直接去數 trains 陣列！
-                // 檢查第一班最快的車是不是要等 15 分鐘 (900秒) 以上，或者根本沒有車
+                // 💥 鋼鐵判定核心：雙重保險鎖！
                 let isCurrentLineTerminated = false;
+                
+                // 檢查 A：火車陣列是不是空的
                 if (trains.length === 0) {
                     isCurrentLineTerminated = true;
-                } else {
+                } else if (trains[0] && trains[0].time) {
+                    // 檢查 B：如果有一班很久以後才來的清晨特別車（超過15分鐘）
                     let nowCheck = new Date();
                     let diffCheck = Math.floor((trains[0].time - nowCheck) / 1000);
-                    if (diffCheck >= 900) { 
-                        isCurrentLineTerminated = true; // 超過15分鐘，判定為深夜收車
-                    }
+                    if (diffCheck >= 900) { isCurrentLineTerminated = true; }
+                }
+                
+                // 檢查 C（肉眼同步鎖）：直接偷看前台畫面文字，只要亮起 TERMINATED，立刻鎖死打烊狀態！
+                let panelContent = document.getElementById("panel-content");
+                if (panelContent && (panelContent.innerText.includes("TERMINATED") || panelContent.innerText.includes("暫無班次"))) {
+                    isCurrentLineTerminated = true;
                 }
 
                 let lineName = MTR_DATA[L] ? MTR_DATA[L].name : "該路綫";
 
-                // 💥 第一優先權：只要目前路線沒車了，最頂層跑馬燈無條件一秒強制變黃色！不准亮綠燈！
+                // 💥 最高優先權：只要滿足任何一個打烊條件，最頂層無條件 100% 強制變黃色！
                 if (isCurrentLineTerminated) {
                     okBar.style.display = "none"; 
                     alertBar.style.display = "block";
                     
-                    // 100% 渲染成你指定的精美點陣橘黃色霓虹燈特效
+                    // 完美渲染成優雅的點陣橘黃色霓虹燈特效
                     alertBar.style.color = "#ff9500";
                     alertBar.style.borderColor = "#ff9500";
                     alertBar.style.boxShadow = "inset 0 0 10px rgba(255,149,0,0.5), 0 0 15px rgba(255,149,0,0.3)";
                     marquee.style.color = "#ff9500";
                     marquee.style.textShadow = "0 0 8px #ff9500, 0 0 12px #ff6a00";
                     
-                    // 深夜加料通告：看看此時官方有沒有發布額外的工程故障文字
+                    // 深夜加料通告：看看官方此時有沒有深夜工程文字
                     let extraMsg = "";
                     if (json && json.status === 0) {
                         let errs = [];
@@ -253,10 +262,10 @@
                     }
                     
                     marquee.innerText = `⚠️ 【車務通告】${lineName}現已進入非營運時間。 TERMINATED${extraMsg} `;
-                    return; // 變黃成功，直接攔截返回！
+                    return; // 成功變黃，直接攔截返回！
                 }
 
-                // 第二優先權：如果還有車在跑，才允許走平時的常規正常/壞車判定
+                // 常規有車營運時的判定
                 if (json && json.status === 1) {
                     okBar.style.display = "block"; 
                     alertBar.style.display = "none";
@@ -295,7 +304,7 @@
                     }
                 }
                 
-                // 安全回歸
+                // 100% 安全回歸綠燈
                 okBar.style.display = "block"; 
                 alertBar.style.display = "none";
                 
@@ -303,6 +312,7 @@
                 console.log("故障看板對接中..."); 
             }
         }
+
 
         // ==========================================
         // 4. 精確每秒倒數與月台大小排序
