@@ -197,25 +197,7 @@
                 let marquee = document.getElementById("notice-marquee");
                 
                 if (json && json.status === 1) {
-    okBar.style.display = "block";
-    alertBar.style.display = "none";
-    // 根据当前是否有列车，设置正确文字和颜色
-    let lineSelect = document.getElementById("line-select");
-    let lineName = lineSelect.options[lineSelect.selectedIndex]?.text || "本線路";
-    if (trains && trains.length === 0) {
-        okBar.style.backgroundColor = "#ff9500";
-        okBar.style.color = "#000";
-        okBar.style.borderColor = "#ff9500";
-        okBar.style.boxShadow = "inset 0 0 10px rgba(255,149,0,0.5), 0 0 15px rgba(255,149,0,0.3)";
-        okBar.innerText = `⚠️ ${lineName} 已進入非營運時間`;
-    } else {
-        // 恢复绿色默认样式（清空行内样式）
-        okBar.style.backgroundColor = "";
-        okBar.style.color = "";
-        okBar.style.borderColor = "";
-        okBar.style.boxShadow = "";
-        okBar.innerText = "✅ 全線車務運作正常";
-    }
+    okBar.style.display = "block"; alertBar.style.display = "none";
 }
                 } else if (json && json.status === 0) {
                     let realMessages = [];
@@ -294,38 +276,12 @@
         }
     });
     
-    // 面板内容（留空时显示提示，不影响bar）
+    // === 核心升级：深夜收车非营运时间，点阵字全自动换成黄色 (不发红光) ===
     document.getElementById("panel-content").innerHTML = html || `
         <div class="loading-text" style="color: #ff9500; text-shadow: 0 0 8px #ff9500; font-weight: bold;">
             非營運時間或暫無班次 TERMINATED
         </div>
     `;
-
-    // ========== 控制顶部绿色状态条（变成黄色） ==========
-    let okBar = document.getElementById("mtr-ok-bar");
-    let alertBar = document.getElementById("mtr-alert-bar");
-    let alertVisible = alertBar && alertBar.style.display !== "none";
-    let lineSelect = document.getElementById("line-select");
-    let lineName = lineSelect.options[lineSelect.selectedIndex]?.text || "本線路";
-
-    if (trains.length === 0 && !alertVisible) {
-        // 无车且无红色通告 → 变成黄色
-        okBar.style.display = "block";
-        okBar.style.backgroundColor = "#ff9500";
-        okBar.style.color = "#000";
-        okBar.style.borderColor = "#ff9500";
-        okBar.style.boxShadow = "inset 0 0 10px rgba(255,149,0,0.5), 0 0 15px rgba(255,149,0,0.3)";
-        okBar.innerText = `⚠️ ${lineName} 已進入非營運時間`;
-    } else if (!alertVisible) {
-        // 有车或加载中 → 恢复绿色正常
-        okBar.style.display = "block";
-        okBar.style.backgroundColor = "";
-        okBar.style.color = "";
-        okBar.style.borderColor = "";
-        okBar.style.boxShadow = "";
-        okBar.innerText = "✅ 全線車務運作正常";
-    }
-    // 如果红色通告可见，okBar会被隐藏，这里什么都不做
 }
             
             // === 核心升級：深夜收車非營運時間，點陣字全自動換成黃色 (不發紅光) ===
