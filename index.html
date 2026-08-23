@@ -197,7 +197,26 @@
                 let marquee = document.getElementById("notice-marquee");
                 
                 if (json && json.status === 1) {
-                    okBar.style.display = "block"; alertBar.style.display = "none";
+    okBar.style.display = "block";
+    alertBar.style.display = "none";
+    // 根据当前是否有列车，设置正确文字和颜色
+    let lineSelect = document.getElementById("line-select");
+    let lineName = lineSelect.options[lineSelect.selectedIndex]?.text || "本線路";
+    if (trains && trains.length === 0) {
+        okBar.style.backgroundColor = "#ff9500";
+        okBar.style.color = "#000";
+        okBar.style.borderColor = "#ff9500";
+        okBar.style.boxShadow = "inset 0 0 10px rgba(255,149,0,0.5), 0 0 15px rgba(255,149,0,0.3)";
+        okBar.innerText = `⚠️ ${lineName} 已進入非營運時間`;
+    } else {
+        // 恢复绿色默认样式（清空行内样式）
+        okBar.style.backgroundColor = "";
+        okBar.style.color = "";
+        okBar.style.borderColor = "";
+        okBar.style.boxShadow = "";
+        okBar.innerText = "✅ 全線車務運作正常";
+    }
+}
                 } else if (json && json.status === 0) {
                     let realMessages = [];
                     if (json.text) { realMessages.push(json.text); }
@@ -240,40 +259,74 @@
         // 4. 精確每秒倒數與月台大小排序
         // ==========================================
         function renderUI() {
-            let staSelect = document.getElementById("station-select");
-            if (!staSelect || staSelect.selectedIndex === -1 || !staSelect.value) { return; }
-            
-            let stationName = staSelect.options[staSelect.selectedIndex].text;
-            document.getElementById("panel-title").innerText = `📊 ${stationName} 站 · 實時月台 PIDS 顯示屏`;
-            
-            let now = new Date();
-            let html = "";
-            
-            trains.sort(function(a, b) {
-                if (a.plat !== b.plat) { return a.plat - b.plat; }
-                return a.time - b.time;
-            });
-            
-            trains.forEach(function(t) {
-                let diff = Math.floor((t.time - now) / 1000);
-                if (diff >= -90) {
-                    let timeText = ""; let isArrivingClass = "";
-                    if (diff < 0) {
-                        timeText = "列車到站中 ARRIVING"; isArrivingClass = "arriving";
-                    } else {
-                        timeText = `${Math.floor(diff / 60)}分 ${String(diff % 60).padStart(2, '0')}秒`;
-                    }
-                    html += `
-                        <div class="train-card">
-                            <div>
-                                <div class="direction">往 ${t.dest}</div>
-                                <div class="platform">${t.plat} 號月台 Platform ${t.plat}</div>
-                            </div>
-                            <div class="countdown ${isArrivingClass}">${timeText}</div>
-                        </div>
-                    `;
-                }
-            });
+    let staSelect = document.getElementById("station-select");
+    if (!staSelect || staSelect.selectedIndex === -1 || !staSelect.value) { return; }
+    
+    let stationName = staSelect.options[staSelect.selectedIndex].text;
+    document.getElementById("panel-title").innerText = `📊 ${stationName} 站 · 實時月台 PIDS 顯示屏`;
+    
+    let now = new Date();
+    let html = "";
+    
+    trains.sort(function(a, b) {
+        if (a.plat !== b.plat) { return a.plat - b.plat; }
+        return a.time - b.time;
+    });
+    
+    trains.forEach(function(t) {
+        let diff = Math.floor((t.time - now) / 1000);
+        if (diff >= -90) {
+            let timeText = ""; let isArrivingClass = "";
+            if (diff < 0) {
+                timeText = "列車到站中 ARRIVING"; isArrivingClass = "arriving";
+            } else {
+                timeText = `${Math.floor(diff / 60)}分 ${String(diff % 60).padStart(2, '0')}秒`;
+            }
+            html += `
+                <div class="train-card">
+                    <div>
+                        <div class="direction">往 ${t.dest}</div>
+                        <div class="platform">${t.plat} 號月台 Platform ${t.plat}</div>
+                    </div>
+                    <div class="countdown ${isArrivingClass}">${timeText}</div>
+                </div>
+            `;
+        }
+    });
+    
+    // 面板内容（留空时显示提示，不影响bar）
+    document.getElementById("panel-content").innerHTML = html || `
+        <div class="loading-text" style="color: #ff9500; text-shadow: 0 0 8px #ff9500; font-weight: bold;">
+            非營運時間或暫無班次 TERMINATED
+        </div>
+    `;
+
+    // ========== 控制顶部绿色状态条（变成黄色） ==========
+    let okBar = document.getElementById("mtr-ok-bar");
+    let alertBar = document.getElementById("mtr-alert-bar");
+    let alertVisible = alertBar && alertBar.style.display !== "none";
+    let lineSelect = document.getElementById("line-select");
+    let lineName = lineSelect.options[lineSelect.selectedIndex]?.text || "本線路";
+
+    if (trains.length === 0 && !alertVisible) {
+        // 无车且无红色通告 → 变成黄色
+        okBar.style.display = "block";
+        okBar.style.backgroundColor = "#ff9500";
+        okBar.style.color = "#000";
+        okBar.style.borderColor = "#ff9500";
+        okBar.style.boxShadow = "inset 0 0 10px rgba(255,149,0,0.5), 0 0 15px rgba(255,149,0,0.3)";
+        okBar.innerText = `⚠️ ${lineName} 已進入非營運時間`;
+    } else if (!alertVisible) {
+        // 有车或加载中 → 恢复绿色正常
+        okBar.style.display = "block";
+        okBar.style.backgroundColor = "";
+        okBar.style.color = "";
+        okBar.style.borderColor = "";
+        okBar.style.boxShadow = "";
+        okBar.innerText = "✅ 全線車務運作正常";
+    }
+    // 如果红色通告可见，okBar会被隐藏，这里什么都不做
+}
             
             // === 核心升級：深夜收車非營運時間，點陣字全自動換成黃色 (不發紅光) ===
             document.getElementById("panel-content").innerHTML = html || `
