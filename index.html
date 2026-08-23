@@ -47,6 +47,14 @@
             "AEL": { name: "機場快綫", stations: {"HOK":"香港", "KOW":"九龍", "TSY":"青衣", "AIR":"機場", "AWE":"博覽館"} }
         };
 
+        const GLOBAL_DEST = {
+            "WHA":"黃埔", "HOM":"何文田", "YMT":"油麻地", "MOK":"旺角", "PRE":"太子", "SKM":"石硤尾", "KOT":"九龍塘", "LOF":"樂富", "WTS":"黃大仙", "DIH":"鑽石山", "CHH":"彩虹", "KOB":"九龍灣", "APM":"牛頭角", "KWT":"觀塘", "LAT":"藍田", "YAT":"油塘", "TIK":"調景嶺",
+            "KET":"堅尼地城", "HKU":"香港大學", "SYP":"西營盤", "SHW":"上環", "CEN":"中環", "ADM":"金鐘", "WAC":"灣仔", "CWB":"銅鑼灣", "TIH":"天后", "FOH":"炮台山", "NPK":"北角", "QUB":"鰂魚涌", "TAK":"太古", "SOH":"西灣河", "SKW":"筲箕灣", "CHW":"柴灣",
+            "JOR":"佐敦", "SSP":"深水埗", "CSW":"長沙灣", "LCK":"荔枝角", "MEF":"美孚", "LAK":"荔景", "KWF":"葵芳", "KWH":"葵興", "TWH":"荃灣", "TKO":"將軍澳", "LHP":"康城", "HAH":"坑口", "POA":"寶琳",
+            "TUM":"屯門", "SIH":"兆康", "TIS":"天水圍", "YUL":"元朗", "KSR":"錦上路", "TWW":"荃灣西", "NAC":"南昌", "OLY":"奧運", "AUS":"柯士甸", "ETS":"尖東", "HUH":"紅磡", "TKW":"土瓜灣", "SUW":"宋皇臺", "CKA":"啟德", "HIK":"顯示", "TAW":"大圍", "STW":"沙田圍", "CIO":"第一城", "SHM":"石門", "TSH":"大水坑", "HEO":"恆安", "MOS":"馬鞍山", "WKS":"烏溪沙",
+            "EXC":"會展", "MKK":"旺角東", "SHT":"沙田", "FOT":"火炭", "UNI":"大學", "TAP":"大埔墟", "TWO":"太和", "FAN":"粉嶺", "SHS":"上水", "LOW":"羅湖", "LMC":"落馬洲", "HOK":"香港", "KOW":"九龍", "TSY":"青衣", "SUN":"欣澳", "TUC":"東涌", "AIR":"機場", "AWE":"博覽館"
+        };
+
         let trains = [], apiInterval = null, uiInterval = null;
 
         function initApp() {
@@ -75,11 +83,10 @@
             let L = document.getElementById("line-select").value;
             let S = document.getElementById("station-select").value;
             
-            // 1. 還原港鐵官方網址
             let mtrArr = ["h","t","t","p","s",":","/","/","r","t",".","d","a","t","a",".","g","o","v",".","h","k","/","v","1","/","t","r","a","n","s","p","o","r","t","/","m","t","r","/","g","e","t","S","c","h","e","d","u","l","e",".","p","h","p"];
             let mtrUrl = mtrArr.join("") + "?line=" + L + "&sta=" + S;
             
-            // 2. 核心修正：換上全球最穩定的開源官方解鎖通道（永不限流，直通港鐵）
+            // 使用完全不限流的全球官方公用解鎖通道
             let proxyArr = ["h","t","t","p","s",":","/","/","c","o","r","s","p","r","o","x","y",".","i","o","/","?","u","r","l","="];
             let proxyUrl = proxyArr.join("") + encodeURIComponent(mtrUrl);
             
@@ -103,58 +110,13 @@
                         }
                     });
                 }
-            } catch (e) { console.log("訊號直連中..."); }
-        }
-
-            
-            // === 核心大升級：全香港所有可能成為終點站的超級大辭典 ===
-                   const GLOBAL_DEST = {
-            // 觀塘綫
-            "WHA":"黃埔", "HOM":"何文田", "YMT":"油麻地", "MOK":"旺角", "PRE":"太子", "SKM":"石硤尾", "KOT":"九龍塘", "LOF":"樂富", "WTS":"黃大仙", "DIH":"鑽石山", "CHH":"彩虹", "KOB":"九龍灣", "APM":"牛頭角", "KWT":"觀塘", "LAT":"藍田", "YAT":"油塘", "TIK":"調景嶺",
-            // 港島綫
-            "KET":"堅尼地城", "HKU":"香港大學", "SYP":"西營盤", "SHW":"上環", "CEN":"中環", "ADM":"金鐘", "WAC":"灣仔", "CWB":"銅鑼灣", "TIH":"天后", "FOH":"炮台山", "NPK":"北角", "QUB":"鰂魚涌", "TAK":"太古", "SOH":"西灣河", "SKW":"筲箕灣", "CHW":"柴灣",
-            // 荃灣綫
-            "JOR":"佐敦", "SSP":"深水埗", "CSW":"長沙灣", "LCK":"荔枝角", "MEF":"美孚", "LAK":"荔景", "KWF":"葵芳", "KWH":"葵興", "TWH":"荃灣",
-            // 將軍澳綫
-            "TKO":"將軍澳", "LHP":"康城", "HAH":"坑口", "POA":"寶琳",
-            // 屯馬綫
-            "TUM":"屯門", "SIH":"兆康", "TIS":"天水圍", "YUL":"元朗", "KSR":"錦上路", "TWW":"荃灣西", "NAC":"南昌", "OLY":"奧運", "AUS":"柯士甸", "ETS":"尖東", "HUH":"紅磡", "TKW":"土瓜灣", "SUW":"宋皇臺", "CKA":"啟德", "HIK":"顯徑", "TAW":"大圍", "STW":"沙田圍", "CIO":"第一城", "SHM":"石門", "TSH":"大水坑", "HEO":"恆安", "MOS":"馬鞍山", "WKS":"烏溪沙",
-            // 東鐵綫
-            "EXC":"會展", "MKK":"旺角東", "SHT":"沙田", "FOT":"火炭", "UNI":"大學", "TAP":"大埔墟", "TWO":"太和", "FAN":"粉嶺", "SHS":"上水", "LOW":"羅湖", "LMC":"落馬洲",
-            // 東涌綫 & 機場快綫
-            "HOK":"香港", "KOW":"九龍", "TSY":"青衣", "SUN":"欣澳", "TUC":"東涌", "AIR":"機場", "AWE":"博覽館"
-        };
-
-            
-            try {
-                let res = await fetch(proxyUrl);
-                let json = await res.json(); 
-                trains = [];
-                
-                if (json && json.status === 1 && json.data && json.data[L + "-" + S]) {
-                    let data = json.data[L + "-" + S];
-                    ['UP', 'DOWN'].forEach(dir => {
-                        if (data && data[dir]) {
-                            data[dir].forEach(t => {
-                                
-                                // 直接查超級大辭典，查不到就用原始代碼，絕對不讓班次消失
-                                let destName = GLOBAL_DEST[t.dest] || t.dest;
-                                
-                                trains.push({ 
-                                    dest: destName, 
-                                    plat: t.plat, 
-                                    time: new Date(t.time.replace(/-/g, "/")) 
-                                });
-                            });
-                        }
-                    });
-                }
             } catch (e) { console.log("訊號對接中..."); }
         }
 
-
         function renderUI() {
             let staSelect = document.getElementById("station-select");
+            if (!staSelect || staSelect.selectedIndex === -1) return; // 安全防護，防止未加載完成時卡死
+            
             let stationName = staSelect.options[staSelect.selectedIndex].text;
             document.getElementById("panel-title").innerText = `📊 ${stationName} 站 · 即時到站看板`;
             
