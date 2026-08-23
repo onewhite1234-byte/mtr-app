@@ -87,17 +87,14 @@
         // ==========================================
         // 3. 實時列車時間獲取通道（自帶你的私人 Cloudflare 代理版）
         // ==========================================
-                // ==========================================
-        // 3. 實時列車時間獲取通道（私人代理直連版）
-        // ==========================================
-                // ==========================================
-        // 3. 實時列車時間獲取通道（政府官方公共通道直連版）
+               // ==========================================
+        // 3. 實時列車時間獲取通道（超直覺偵錯版）
         // ==========================================
         async function fetchMtrData() {
             let L = document.getElementById("line-select").value;
             let S = document.getElementById("station-select").value;
+            let panelContent = document.getElementById("panel-content");
             
-            // 使用政府大數據公共通道的專屬網址，完全不需要 Cloudflare，100% 穩定不限流
             let govPart1 = "ht" + "tps://";
             let govPart2 = "wms.as" + "di.g" + "ov.hk/";
             let govPart3 = "cgi-bin/m" + "tr";
@@ -105,6 +102,13 @@
             
             try {
                 let res = await fetch(proxyUrl);
+                
+                // 偵錯 A：如果伺服器回傳了錯誤代碼（如 404 或 500）
+                if (!res.ok) {
+                    panelContent.innerHTML = `<div class="loading-text" style="color:#d32f2f;">❌ 伺服器回應錯誤：代碼 ${res.status}</div>`;
+                    return;
+                }
+                
                 let json = await res.json(); 
                 trains = [];
                 
@@ -112,7 +116,6 @@
                     let data = null;
                     let targetKey = (L + "-" + S).toUpperCase();
                     
-                    // 智慧相容終點站
                     if (json.data[targetKey]) {
                         data = json.data[targetKey];
                     } else {
@@ -126,8 +129,6 @@
                             if (data[dir] && Array.isArray(data[dir])) {
                                 data[dir].forEach(function(t) {
                                     let destName = GLOBAL_DEST[t.dest] || t.dest;
-                                    
-                                    // 完美時區校正標籤，全面引爆密集班次
                                     let formattedTimeStr = t.time.replace(" ", "T") + "+08:00";
                                     
                                     trains.push({ 
@@ -139,11 +140,26 @@
                             }
                         });
                     }
+                    
+                    // 偵錯 B：如果連線成功，但港鐵給的資料袋裡連一班車都沒有
+                    if (trains.length === 0) {
+                        panelContent.innerHTML = `<div class="loading-text" style="color:#ff9500;">⚠️ 連線成功，但港鐵此時沒有返回這條綫的班次數據</div>`;
+                    }
+                    
+                } else {
+                    panelContent.innerHTML = `<div class="loading-text" style="color:#ff9500;">⚠️ API 回傳格式異常或此站無列車服務</div>`;
                 }
-            } catch (e) { console.log("列車訊號對接中..."); }
+            } catch (e) { 
+                // 偵錯 C：最常見的錯誤，瀏覽器因為跨網域（CORS）安全限制，直接在前端把這條連線給切斷了！
+                panelContent.innerHTML = `
+                    <div class="loading-text" style="color:#d32f2f; text-align:left; font-size:14px; line-height:1.5;">
+                        ❌ 網絡連線被瀏覽器攔截 (CORS 鎖定)<br>
+                        原因：GitHub 網頁不允許直接Fetch這個官方網址。<br>
+                        錯誤訊息：${e.message}
+                    </div>
+                `;
+            }
         }
-
-
 
         // ==========================================
         // 4. 精確每秒倒數與月台大小排序
