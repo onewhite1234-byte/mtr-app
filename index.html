@@ -167,40 +167,70 @@
                // ==========================================
         // 🌟 獨立背景功能：真．全港鐵路故障狀態自動監測（恢復官方直連版）
         // ==========================================
+               // ==========================================
+        // 🌟 獨立背景功能：100% 複製港鐵控制室真實手動信息版
+        // ==========================================
         async function fetchMtrStatusNotice() {
             let statusPart1 = "ht" + "tps://";
             let statusPart2 = "rt.da" + "ta.g" + "ov.hk/";
             let statusPart3 = "v1/tra" + "nsport/m" + "tr/getSt" + "atus.php";
             let statusUrl = statusPart1 + statusPart2 + statusPart3;
             
+            let proxyPart1 = "ht" + "tps://";
+            let proxyPart2 = "api.all" + "orig" + "ins.w" + "in/g" + "et?u" + "rl=";
+            let proxyUrl = proxyPart1 + proxyPart2 + encodeURIComponent(statusUrl);
+            
             try {
-                let res = await fetch(statusUrl);
-                let json = await res.json();
+                let res = await fetch(proxyUrl);
+                let wrapperJson = await res.json(); 
+                let json = JSON.parse(wrapperJson.contents);
                 let okBar = document.getElementById("mtr-ok-bar");
                 let alertBar = document.getElementById("mtr-alert-bar");
                 let marquee = document.getElementById("notice-marquee");
                 
-                // json.status 為 1 代表全港綠色正常，為 0 代表有突發事故！
+                // json.status 為 1 代表全港綠色正常
                 if (json && json.status === 1) {
                     okBar.style.display = "block";
                     alertBar.style.display = "none";
-                } else if (json && json.status === 0 && json.data) {
-                    let errs = [];
-                    for (let line in json.data) {
-                        let lineName = MTR_DATA[line] ? MTR_DATA[line].name : line;
-                        errs.push(`【${lineName}警告】${json.data[line].text || "發生突發車務延誤事故"}`);
+                } 
+                // json.status 為 0 代表打風或出事了，港鐵發出了真實手動公告！
+                else if (json && json.status === 0) {
+                    let realMessages = [];
+                    
+                    // 核心 A：如果港鐵把手動大通告放在最外層，直接 Copy
+                    if (json.text) {
+                        realMessages.push(json.text);
                     }
-                    if (errs.length > 0) {
+                    
+                    // 核心 B：如果港鐵按路線一條條打字，我們通通 Copy 並打包拼在一起
+                    if (json.data && typeof json.data === 'object') {
+                        for (let key in json.data) {
+                            let rawData = json.data[key];
+                            if (!rawData) continue;
+                            
+                            // 獲取港鐵控制室手動打的那串真實中文
+                            let mtrRealText = (typeof rawData === 'string') ? rawData : (rawData.text || "");
+                            if (mtrRealText) {
+                                realMessages.push(mtrRealText);
+                            }
+                        }
+                    }
+                    
+                    // 核心 C：如果真的抓到了港鐵發出的原話，紅色跑馬燈 100% 複製輸出！
+                    if (realMessages.length > 0) {
                         okBar.style.display = "none";
-                        alertBar.style.display = "block"; 
-                        marquee.innerText = "⚠️ 突發事故： " + errs.join("  |  ") + " —— 請乘客提前做好出行準備。 ";
-                    } else {
-                        okBar.style.display = "block";
-                        alertBar.style.display = "none";
+                        alertBar.style.display = "block";
+                        
+                        // 把港鐵手動打的所有真原話，用「 | 」連在一起直接滾動顯示
+                        marquee.innerText = "⚠️ 港鐵實時特別通告： " + realMessages.join("  |  ") + " ";
+                        return;
                     }
                 }
-            } catch (e) { console.log("故障看板對接中..."); }
+            } catch (e) { 
+                console.log("故障看板對接中..."); 
+            }
         }
+
 
 
         // ==========================================
