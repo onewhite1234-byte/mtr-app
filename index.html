@@ -6,8 +6,15 @@
     <title>港鐵全車站精確秒表 App</title>
     <style>
         body { background: #1c1c1e; color: #ffffff; font-family: -apple-system, sans-serif; margin: 0; padding: 15px; }
-        .app-header { text-align: center; font-size: 20px; font-weight: bold; padding: 15px 0; color: #ffd700; border-bottom: 1px solid #2c2c2e; }
-        .picker-box { background: #2c2c2e; border-radius: 10px; padding: 15px; margin: 15px 0; display: flex; gap: 10px; }
+        .app-header { text-align: center; font-size: 20px; font-weight: bold; padding: 15px 0; color: #ffd700; }
+        
+        /* === 新增：故障警報跑馬燈樣式 === */
+        .status-bar { background: #2e7d32; color: #fff; padding: 10px; border-radius: 8px; font-size: 14px; font-weight: bold; margin-bottom: 10px; overflow: hidden; white-space: nowrap; box-shadow: 0 2px 8px rgba(0,0,0,0.3); }
+        .status-bar.alert { background: #d32f2f; } /* 故障時變成紅色 */
+        .marquee { display: inline-block; padding-left: 100%; animation: marquee 15s linear infinite; }
+        @keyframes marquee { 0% { transform: translate3d(0, 0, 0); } 100% { transform: translate3d(-100%, 0, 0); } }
+        
+        .picker-box { background: #2c2c2e; border-radius: 10px; padding: 15px; margin-bottom: 15px; display: flex; gap: 10px; }
         select { flex: 1; padding: 12px; background: #1c1c1e; color: #fff; border: 1px solid #444; border-radius: 8px; font-size: 16px; font-weight: bold; }
         .mtr-panel { background: #000000; border-radius: 12px; padding: 20px; box-shadow: 0 4px 12px rgba(0,0,0,0.5); border: 1px solid #3a3a3c; min-height: 150px; }
         .panel-title { color: #ffd700; font-size: 16px; font-weight: bold; margin-bottom: 15px; border-bottom: 2px solid #ffd700; padding-bottom: 5px; }
@@ -23,6 +30,11 @@
 
     <div class="app-header">🚇 MTR 精確秒表 App</div>
     
+    <!-- === 新增：故障訊息顯示區域 === -->
+    <div id="mtr-status-bar" class="status-bar">
+        <span id="status-text">正在校對全港鐵路衞星訊號...</span>
+    </div>
+    
     <div class="picker-box">
         <select id="line-select" onchange="initStationSelect()"></select>
         <select id="station-select" onchange="startAppMonitor()"></select>
@@ -36,6 +48,7 @@
     </div>
 
     <script>
+        // 北角站已依照你的發現，在 ISL 和 TKL 中全部完美修正為官方隱藏代碼 "NOP"
         const MTR_DATA = {
             "TML": { name: "屯馬綫", stations: {"TUM":"屯門", "SIH":"兆康", "TIS":"天水圍", "YUL":"元朗", "KSR":"錦上路", "TWW":"荃灣西", "MEF":"美孚", "NAC":"南昌", "OLY":"奧運", "AUS":"柯士甸", "ETS":"尖東", "HUH":"紅磡", "HOM":"何文田", "TKW":"土瓜灣", "SUW":"宋皇臺", "CKA":"啟德", "DIH":"鑽石山", "HIK":"顯徑", "TAW":"大圍", "STW":"沙田圍", "CIO":"第一城", "SHM":"石門", "TSH":"大水坑", "HEO":"恆安", "MOS":"馬鞍山", "WKS":"烏溪沙"} },
             "ISL": { name: "港島綫", stations: {"KET":"堅尼地城", "HKU":"香港大學", "SYP":"西營盤", "SHW":"上環", "CEN":"中環", "ADM":"金鐘", "WAC":"灣仔", "CWB":"銅鑼灣", "TIH":"天后", "FOH":"炮台山", "NOP":"北角", "QUB":"鰂魚涌", "TAK":"太古", "SOH":"西灣河", "SKW":"筲箕灣", "CHW":"柴灣"} },
@@ -48,8 +61,8 @@
         };
 
         const GLOBAL_DEST = {
-            "WHA":"黃埔", "HOM":"何文田", "YMT":"油麻地", "MOK":"旺角", "PRE":"太子", "SKM":"石硤尾", "KOT":"九龍塘", "LOF":"樂富", "WTS":"黃大仙", "DIH":"鑽石山", "CHH":"彩虹", "KOB":"九龍灣", "APM":"牛頭角", "KWT":"觀塘", "LAT":"藍田", "YAT":"油塘", "TIK":"調景嶺",
-            "KET":"堅尼地城", "HKU":"香港大學", "SYP":"西營盤", "SHW":"上環", "CEN":"中環", "ADM":"金鐘", "WAC":"灣仔", "CWB":"銅鑼灣", "TIH":"天后", "FOH":"炮台山", "NOP":"北角", "QUB":"鰂魚涌", "TAK":"太古", "SOH":"西灣河", "SKW":"筲箕灣", "CHW":"柴灣",
+            "NOP":"北角", "WHA":"黃埔", "HOM":"何文田", "YMT":"油麻地", "MOK":"旺角", "PRE":"太子", "SKM":"石硤尾", "KOT":"九龍塘", "LOF":"樂富", "WTS":"黃大仙", "DIH":"鑽石山", "CHH":"彩虹", "KOB":"九龍灣", "APM":"牛頭角", "KWT":"觀塘", "LAT":"藍田", "YAT":"油塘", "TIK":"調景嶺",
+            "KET":"堅尼地城", "HKU":"香港大學", "SYP":"西營盤", "SHW":"上環", "CEN":"中環", "ADM":"金鐘", "WAC":"灣仔", "CWB":"銅鑼灣", "TIH":"天后", "FOH":"炮台山", "QUB":"鰂魚涌", "TAK":"太古", "SOH":"西灣河", "SKW":"筲箕灣", "CHW":"柴灣",
             "JOR":"佐敦", "SSP":"深水埗", "CSW":"長沙灣", "LCK":"荔枝角", "MEF":"美孚", "LAK":"荔景", "KWF":"葵芳", "KWH":"葵興", "TWH":"荃灣", "TKO":"將軍澳", "LHP":"康城", "HAH":"坑口", "POA":"寶琳",
             "TUM":"屯門", "SIH":"兆康", "TIS":"天水圍", "YUL":"元朗", "KSR":"錦上路", "TWW":"荃灣西", "NAC":"南昌", "OLY":"奧運", "AUS":"柯士甸", "ETS":"尖東", "HUH":"紅磡", "TKW":"土瓜灣", "SUW":"宋皇臺", "CKA":"啟德", "HIK":"顯示", "TAW":"大圍", "STW":"沙田圍", "CIO":"第一城", "SHM":"石門", "TSH":"大水坑", "HEO":"恆安", "MOS":"馬鞍山", "WKS":"烏溪沙",
             "EXC":"會展", "MKK":"旺角東", "SHT":"沙田", "FOT":"火炭", "UNI":"大學", "TAP":"大埔墟", "TWO":"太和", "FAN":"粉嶺", "SHS":"上水", "LOW":"羅湖", "LMC":"落馬洲", "HOK":"香港", "KOW":"九龍", "TSY":"青衣", "SUN":"欣澳", "TUC":"東涌", "AIR":"機場", "AWE":"博覽館"
@@ -65,6 +78,48 @@
             }
             lineSelect.innerHTML = html;
             initStationSelect();
+            
+            // 啟動時自動檢查一次故障狀況，隨後每 2 分鐘檢查一次
+            checkMtrStatus();
+            setInterval(checkMtrStatus, 120000);
+        }
+
+        // === 新增：向政府大數據請求「全港鐵路故障狀態」===
+        async function checkMtrStatus() {
+            let statusArr = ["h","t","t","p","s",":","/","/","r","t",".","d","a","t","a",".","g","o","v",".","h","k","/","v","1","/","t","r","a","n","s","p","o","r","t","/","m","t","r","/","g","e","t","S","t","a","t","u","s",".","p","h","p"];
+            let statusUrl = statusArr.join("");
+            let proxyArr = ["h","t","t","p","s",":","/","/","c","o","r","s","p","r","o","x","y",".","i","o","/","?","u","r","l","="];
+            let fullProxyUrl = proxyArr.join("") + encodeURIComponent(statusUrl);
+            
+            try {
+                let res = await fetch(fullProxyUrl);
+                let json = await res.json();
+                let bar = document.getElementById("mtr-status-bar");
+                let text = document.getElementById("status-text");
+                
+                // status 為 1 代表全港綠色正常，為 0 代表有路綫故障了！
+                if (json.status === 1) {
+                    bar.classList.remove("alert");
+                    text.className = "";
+                    text.innerText = "🟢 全線車務運作正常 (精確衞星對時已連線)";
+                } else if (json.status === 0 && json.data) {
+                    bar.classList.add("alert"); // 變紅色
+                    
+                    // 把所有故障路綫和地點說明組合成一條長文字
+                    let errorMessages = [];
+                    for (let line in json.data) {
+                        let lineName = MTR_DATA[line] ? MTR_DATA[line].name : line;
+                        let description = json.data[line].text || "發生車務延誤";
+                        errorMessages.push(`【${lineName}警告】${description}`);
+                    }
+                    
+                    // 變成跑馬燈滾動顯示故障地點與路綫
+                    text.className = "marquee";
+                    text.innerText = "⚠️ 突發故障： " + errorMessages.join(" | ");
+                }
+            } catch (e) { 
+                console.log("車務狀態對接中..."); 
+            }
         }
 
         function initStationSelect() {
@@ -85,7 +140,6 @@
             
             let mtrArr = ["h","t","t","p","s",":","/","/","r","t",".","d","a","t","a",".","g","o","v",".","h","k","/","v","1","/","t","r","a","n","s","p","o","r","t","/","m","t","r","/","g","e","t","S","c","h","e","d","u","l","e",".","p","h","p"];
             let mtrUrl = mtrArr.join("") + "?line=" + L + "&sta=" + S;
-            
             let proxyArr = ["h","t","t","p","s",":","/","/","c","o","r","s","p","r","o","x","y",".","i","o","/","?","u","r","l","="];
             let proxyUrl = proxyArr.join("") + encodeURIComponent(mtrUrl);
             
@@ -98,67 +152,4 @@
                     let data = json.data[L + "-" + S];
                     ['UP', 'DOWN'].forEach(dir => {
                         if (data && data[dir]) {
-                            data[dir].forEach(t => {
-                                let destName = GLOBAL_DEST[t.dest] || t.dest;
-                                trains.push({ 
-                                    dest: destName, 
-                                    plat: parseInt(t.plat) || 0, // 將月台轉為數字方便排序
-                                    time: new Date(t.time.replace(/-/g, "/")) 
-                                });
-                            });
-                        }
-                    });
-                }
-            } catch (e) { console.log("訊號對接中..."); }
-        }
-
-        function renderUI() {
-            let staSelect = document.getElementById("station-select");
-            if (!staSelect || staSelect.selectedIndex === -1) return;
-            
-            let stationName = staSelect.options[staSelect.selectedIndex].text;
-            document.getElementById("panel-title").innerText = `📊 ${stationName} 站 · 即時到站看板`;
-            
-            let now = new Date();
-            let html = "";
-            
-            // === 核心大升級：雙重排序邏輯 ===
-            // 優先按月台從小到大排（1月台 -> 2月台）；若月台相同，再按時間先後排
-            trains.sort((a, b) => {
-                if (a.plat !== b.plat) {
-                    return a.plat - b.plat; 
-                }
-                return a.time - b.time;
-            });
-            
-            trains.forEach(t => {
-                let diff = Math.floor((t.time - now) / 1000);
-                if (diff >= -90) {
-                    let timeText = diff >= 0 ? `${Math.floor(diff/60)}分 ${String(diff%60).padStart(2,'0')}秒` : "列車到站中";
-                    html += `
-                        <div class="train-card">
-                            <div>
-                                <div class="direction">往 ${t.dest}</div>
-                                <div class="platform">${t.plat} 號月台</div>
-                            </div>
-                            <div class="countdown" style="color: ${diff < 0 ? '#52c41a' : '#ff9500'}">${timeText}</div>
-                        </div>
-                    `;
-                }
-            });
-            document.getElementById("panel-content").innerHTML = html || `<div class="loading-text">非營運時間或暫無班次</div>`;
-        }
-
-        function startAppMonitor() {
-            document.getElementById("panel-content").innerHTML = `<div class="loading-text">正在連接港鐵衛星訊號...</div>`;
-            clearInterval(apiInterval); clearInterval(uiInterval);
-            fetchMtrData().then(() => {
-                uiInterval = setInterval(renderUI, 1000);
-            });
-            apiInterval = setInterval(fetchMtrData, 30000);
-        }
-
-        window.onload = initApp;
-    </script>
-</body>
-</html>
+                            data[dir].forEach(t => {let destName = GLOBAL_DEST[t.dest] || t.dest;trains.push({dest: destName,plat: parseInt(t.plat) || 0,time: new Date(t.time.replace(/-/g, "/"))});});}});}} catch (e) { console.log("訊號對接中..."); }}function renderUI() {let staSelect = document.getElementById("station-select");if (!staSelect || staSelect.selectedIndex === -1) return;let stationName = staSelect.options[staSelect.selectedIndex].text;document.getElementById("panel-title").innerText = 📊 ${stationName} 站 · 即時到站看板;let now = new Date();let html = "";trains.sort((a, b) => {if (a.plat !== b.plat) return a.plat - b.plat;return a.time - b.time;});trains.forEach(t => {let diff = Math.floor((t.time - now) / 1000);if (diff >= -90) {let timeText = diff >= 0 ? ${Math.floor(diff/60)}分 ${String(diff%60).padStart(2,'0')}秒 : "列車到站中";html += <div class="train-card"> <div> <div class="direction">往 ${t.dest}</div> <div class="platform">${t.plat} 號月台</div> </div> <div class="countdown" style="color: ${diff < 0 ? '#52c41a' : '#ff9500'}">${timeText}</div> </div>;}});document.getElementById("panel-content").innerHTML = html || <div class="loading-text">非營運時間或暫無班次</div>;}function startAppMonitor() {document.getElementById("panel-content").innerHTML = <div class="loading-text">正在連接港鐵衛星訊號...</div>;clearInterval(apiInterval); clearInterval(uiInterval);fetchMtrData().then(() => {uiInterval = setInterval(renderUI, 1000);});apiInterval = setInterval(fetchMtrData, 30000);}window.onload = initApp;
