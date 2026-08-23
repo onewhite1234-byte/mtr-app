@@ -32,7 +32,7 @@
         .platform { font-size: 13px; color: #8e8e93; margin-top: 5px; font-weight: bold; }
         .countdown { color: #ff9500; font-size: 26px; font-weight: bold; text-shadow: 0 0 8px #ff9500, 0 0 15px #ff6a00; font-family: monospace; }
         
-        /* 列車到站中：高頻綠字閃爍 */
+        /* 列車到站中：高頻綠字閃爍（真月台特效） */
         .arriving { color: #4cd964 !important; text-shadow: 0 0 8px #4cd964, 0 0 15px #4cd964 !important; animation: mtr_blink 0.8s infinite; }
         @keyframes mtr_blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.1; } }
         
@@ -43,7 +43,7 @@
 
     <div class="app-header">🚇 MTR 月台實時電子看板</div>
     
-    <div id="mtr-ok-bar" class="status-ok">🟢 全線車務運作正常 (智能智慧選單聯動版)</div>
+    <div id="mtr-ok-bar" class="status-ok">🟢 全線車務運作正常 (特權真直連聯動版)</div>
     
     <div id="mtr-alert-bar" class="status-notice">
         <span id="notice-marquee" class="marquee-box">⚠️ 正在對接全港鐵路衞星訊號...</span>
@@ -84,20 +84,42 @@
 
         let trains = [], apiInterval = null, uiInterval = null;
 
-        // 智慧初使化：一打開網頁顯示提示詞，絕不擅自作主選屯馬綫
+        // 智慧聯動初始化
         function initApp() {
             let lineSelect = document.getElementById("line-select");
             let staSelect = document.getElementById("station-select");
             
-            // 路線選單初始文字
             let lineHtml = `<option value="">--請選擇路綫--</option>`;
             for (let code in MTR_DATA) {
                 lineHtml += `<option value="${code}">${MTR_DATA[code].name}</option>`;
             }
             lineSelect.innerHTML = lineHtml;
-            
-            // 車站選單初始文字
             staSelect.innerHTML = `<option value="">--請先選擇路綫--</option>`;
+        }
+
+        function initStationSelect() {
+            let lineCode = document.getElementById("line-select").value;
+            let staSelect = document.getElementById("station-select");
+            let panelContent = document.getElementById("panel-content");
+            let panelTitle = document.getElementById("panel-title");
+
+            if (apiInterval) { clearInterval(apiInterval); }
+            if (uiInterval) { clearInterval(uiInterval); }
+
+            if (!lineCode) {
+                staSelect.innerHTML = `<option value="">--請先選擇路綫--</option>`;
+                panelContent.innerHTML = `<div class="loading-text">請在上方選單選擇路綫...</div>`;
+                panelTitle.innerText = "PIDS 看板待機中";
+                return;
+            }
+
+            let stations = MTR_DATA[lineCode].stations;
+            let html = `<option value="">--請選擇車站--</option>`;
+            for (let code in stations) {
+                html += `<option value="${code}">${stations[code]}</option>`;
+            }
+            staSelect.innerHTML = html;
+            panelContent.innerHTML = `<div class="loading-text">路綫已選定，請點擊右側選擇車站...</div>`;
         }
 
         // ==========================================
