@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="zh-HK">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>港鐵車務狀態監控台</title>
+    <style>
+        /* 營造控制室深夜沉浸式氛圍 */
+        body { background: #000000; color: #ffffff; font-family: "Courier New", Courier, monospace, "Microsoft JhengHei", sans-serif; margin: 0; padding: 20px; overflow: hidden; text-align: center; }
+        .monitor-header { font-size: 24px; font-weight: bold; color: #ffd700; padding: 20px 0; text-shadow: 0 0 10px #ffd700; border-bottom: 2px solid #222; }
+        
+        /* 正常運作面板：發光綠色點陣與雷達呼吸感 */
+        .panel-ok { margin-top: 50px; padding: 40px; border-radius: 12px; border: 3px solid #4cd964; background: #000; display: block; box-shadow: inset 0 0 20px rgba(76,217,100,0.2), 0 0 25px rgba(76,217,100,0.1); }
+        .ok-text { font-size: 26px; font-weight: bold; color: #4cd964; text-shadow: 0 0 10px #4cd964, 0 0 20px #237804; animation: mtr_pulse 2s infinite; }
+        @keyframes mtr_pulse { 0%, 100% { transform: scale(1); opacity: 1; } 50% { transform: scale(0.98); opacity: 0.8; } }
+        .sub-text { color: #8e8e93; font-size: 14px; margin-top: 15px; font-weight: bold; }
+
+        /* === 究極視覺：真．港鐵月台故障紅色電子跑馬燈面板 === */
+        .panel-alert { margin-top: 50px; padding: 35px 15px; border-radius: 12px; border: 4px solid #ff3b30; background: #000000; display: none; box-shadow: inset 0 0 30px rgba(255,59,48,0.4), 0 0 35px rgba(255,59,48,0.3); overflow: hidden; white-space: nowrap; }
+        .alert-marquee { display: inline-block; padding-left: 100%; animation: mtr_emergency_marquee 16s linear infinite; font-size: 28px; font-weight: bold; color: #ff3b30; text-shadow: 0 0 10px #ff3b30, 0 0 20px #ff4d4f; }
+        @keyframes mtr_emergency_marquee { 0% { transform: translate3d(0, 0, 0); } 100% { transform: translate3d(-100%, 0, 0); } }
+    </style>
+</head>
+<body>
+
+    <div class="monitor-header">🚨 MTR 全港車務安全監控台</div>
+    
+    <!-- 正常運作時顯示的綠色安全牌 -->
+    <div id="mtr-panel-ok" class="panel-ok">
+        <div class="ok-text">🟢 全線鐵路車務運作正常</div>
+        <div class="sub-text">衛星直連對時中 · 雷達每 30 秒自動掃描全港車務狀態</div>
+    </div>
+    
+    <!-- 突發事故全螢幕大紅字滾動跑馬燈（有故障時全自動切換） -->
+    <div id="mtr-panel-alert" class="panel-alert">
+        <span id="emergency-text" class="alert-marquee">⚠️ 正在對接全港鐵路故障警告衞星包...</span>
+    </div>
+
+    <script>
+        async function checkMtrStatus() {
+            // 完全免代理、純潔官方高速大動脈車務狀態網址
+            let statusPart1 = "ht" + "tps://";
+            let statusPart2 = "rt.da" + "ta.g" + "ov.hk/";
+            let statusPart3 = "v1/tra" + "nsport/m" + "tr/getSt" + "atus.php";
+            let statusUrl = statusPart1 + statusPart2 + statusPart3;
+            
+            try {
+                let res = await fetch(statusUrl);
+                let json = await res.json();
+                let okPanel = document.getElementById("mtr-panel-ok");
+                let alertPanel = document.getElementById("mtr-panel-alert");
+                let marqueeText = document.getElementById("emergency-text");
+                
+                // json.status 為 1 代表全港綠色正常，為 0 代表有路綫故障了！
+                if (json && json.status === 1) {
+                    okPanel.style.display = "block";
+                    alertPanel.style.display = "none";
+                } else if (json && json.status === 0 && json.data) {
+                    let errorMessages = [];
+                    for (let line in json.data) {
+                        // 線路簡稱快速翻譯成中文
+                        let lineChinese = line;
+                        if(line === "TML") lineChinese = "屯馬綫";
+                        if(line === "ISL") lineChinese = "港島綫";
+                        if(line === "TWL") lineChinese = "荃灣綫";
+                        if(line === "KTL") lineChinese = "觀塘綫";
+                        if(line === "EAL") lineChinese = "東鐵綫";
+                        if(line === "TKL") lineChinese = "將軍澳綫";
+                        if(line === "TCL") lineChinese = "東涌綫";
+                        if(line === "AEL") lineChinese = "機場快綫";
+                        if(line === "DRL") lineChinese = "迪士尼綫";
+                        
+                        errorMessages.push(`【${lineChinese}重大警告】${json.data[line].text || "發生突發車務延誤事故"}`);
+                    }
+                    
+                    if (errorMessages.length > 0) {
+                        okPanel.style.display = "none";
+                        alertPanel.style.display = "block"; // 切換為紅色緊急跑馬燈面板
+                        marqueeText.innerText = "⚠️ 突發事故報告： " + errorMessages.join("  |  ") + " —— 請乘客合理安排出行時間。 ";
+                    } else {
+                        okPanel.style.display = "block";
+                        alertPanel.style.display = "none";
+                    }
+                }
+            } catch (e) { 
+                console.log("車務訊號防禦中..."); 
+            }
+        }
+
+        // 一開網頁立刻執行，隨後每 30 秒自動掃描一次
+        checkMtrStatus();
+        setInterval(checkMtrStatus, 30000);
+    </script>
+</body>
+</html>
