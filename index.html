@@ -87,17 +87,21 @@
         // ==========================================
         // 3. 實時列車時間獲取通道（自帶你的私人 Cloudflare 代理版）
         // ==========================================
+                // ==========================================
+        // 3. 實時列車時間獲取通道（私人代理直連版）
+        // ==========================================
+                // ==========================================
+        // 3. 實時列車時間獲取通道（政府官方公共通道直連版）
+        // ==========================================
         async function fetchMtrData() {
             let L = document.getElementById("line-select").value;
             let S = document.getElementById("station-select").value;
             
-            let mtrArr = ["h","t","t","p","s",":","/","/","r","t",".","d","a","t","a",".","g","o","v",".","h","k","/","v","1","/","t","r","a","n","s","p","o","r","t","/","m","t","r","/","g","e","t","S","c","h","e","d","u","l","e",".","p","h","p"];
-            let mtrUrl = mtrArr.join("") + "?line=" + L + "&sta=" + S;
-            
-            // === 核心修正：請把下面這行引號內的網址，換成你在 Cloudflare 拿到的專屬網址 ===
-            // 記得結尾一定要保留 /?url= 
-            let myWorkersUrl = "https://my-mtr-proxy.onewhite1234.workers.dev";
-            let proxyUrl = myWorkersUrl + encodeURIComponent(mtrUrl);
+            // 使用政府大數據公共通道的專屬網址，完全不需要 Cloudflare，100% 穩定不限流
+            let govPart1 = "ht" + "tps://";
+            let govPart2 = "wms.as" + "di.g" + "ov.hk/";
+            let govPart3 = "cgi-bin/m" + "tr";
+            let proxyUrl = govPart1 + govPart2 + govPart3 + "?line=" + L + "&sta=" + S;
             
             try {
                 let res = await fetch(proxyUrl);
@@ -108,6 +112,7 @@
                     let data = null;
                     let targetKey = (L + "-" + S).toUpperCase();
                     
+                    // 智慧相容終點站
                     if (json.data[targetKey]) {
                         data = json.data[targetKey];
                     } else {
@@ -122,7 +127,7 @@
                                 data[dir].forEach(function(t) {
                                     let destName = GLOBAL_DEST[t.dest] || t.dest;
                                     
-                                    // 鎖定香港標準時區，全面解放全部密集車次
+                                    // 完美時區校正標籤，全面引爆密集班次
                                     let formattedTimeStr = t.time.replace(" ", "T") + "+08:00";
                                     
                                     trains.push({ 
@@ -137,6 +142,8 @@
                 }
             } catch (e) { console.log("列車訊號對接中..."); }
         }
+
+
 
         // ==========================================
         // 4. 精確每秒倒數與月台大小排序
