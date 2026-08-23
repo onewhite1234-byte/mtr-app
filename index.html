@@ -11,7 +11,7 @@
         
         /* 突發事故紅色/黃色電子跑馬燈（預設隱藏） */
         .status-notice { background: #000000; color: #ff3b30; padding: 14px; border-radius: 8px; font-size: 16px; font-weight: bold; margin: 15px 0; border: 2px solid #ff3b30; box-shadow: inset 0 0 10px rgba(255,59,48,0.5), 0 0 15px rgba(255,59,48,0.3); overflow: hidden; white-space: nowrap; display: none; }
-        .marquee-box { display: inline-block; padding-left: 100%; animation: mtr_marquee 20s linear infinite; text-shadow: 0 0 8px #ff3b30, 0 0 12px #ff4d4f; }
+        .marquee-box { display: inline-block; padding-left: 100%; animation: mtr_marquee 20s linear infinite; text-shadow: 0 0 8px #ff3b30; }
         @keyframes mtr_marquee { 0% { transform: translate3d(0, 0, 0); } 100% { transform: translate3d(-100%, 0, 0); } }
         
         /* 正常營運下的亮綠色點陣告示列 */
@@ -62,7 +62,7 @@
     </div>
 
     <script>
-        // === 官方規格路線排序，南港島綫歸位東涌綫後面！ ===
+        // === 官方規格路線排序 ===
         const MTR_DATA = {
             "TWL": { name: "荃灣綫", stations: {"TWH":"荃灣", "KWH":"葵興", "KWF":"葵芳", "LAK":"荔景", "MEF":"美孚", "LCK":"荔枝角", "CSW":"長沙灣", "SSP":"深水埗", "PRE":"太子", "MOK":"旺角", "YMT":"油麻地", "JOR":"佐敦", "TST":"尖沙咀", "ADM":"金鐘", "CEN":"中環"} },
             "KTL": { name: "觀塘綫", stations: {"TIK":"調景嶺", "YAT":"油塘", "LAT":"藍田", "KWT":"觀塘", "APM":"牛頭角", "KOB":"九龍灣", "CHH":"彩虹", "DIH":"鑽石山", "WTS":"黃大仙", "LOF":"樂富", "KOT":"九龍塘", "SKM":"石硤尾", "PRE":"太子", "MOK":"旺角", "YMT":"油麻地", "HOM":"何文田", "WHA":"黃埔"} },
@@ -80,7 +80,7 @@
             "NOP":"北角", "WHA":"黃埔", "HOM":"何文田", "YMT":"油麻地", "MOK":"旺角", "PRE":"太子", "SKM":"石硤尾", "KOT":"九龍塘", "LOF":"樂富", "WTS":"黃大仙", "DIH":"鑽石山", "CHH":"彩虹", "KOB":"九龍灣", "APM":"牛頭角", "KWT":"觀塘", "LAT":"藍田", "YAT":"油塘", "TIK":"調景嶺",
             "KET":"堅尼地城", "HKU":"香港大學", "SYP":"西營盤", "SHW":"上環", "CEN":"中環", "ADM":"金鐘", "WAC":"灣仔", "CWB":"銅鑼灣", "TIH":"天后", "FOH":"炮台山", "QUB":"鰂魚涌", "TAK":"太古", "SOH":"西灣河", "SKW":"筲箕灣", "CHW":"柴灣",
             "JOR":"佐敦", "SSP":"深水埗", "CSW":"長沙灣", "LCK":"荔枝角", "MEF":"美孚", "LAK":"荔景", "KWF":"葵芳", "KWH":"葵興", "TWH":"荃灣", "TKO":"將軍澳", "LHP":"康城", "HAH":"坑口", "POA":"寶琳",
-            "TUM":"屯門", "SIH":"兆康", "TIS":"天水圍", "YUL":"元朗", "KSR":"錦上路", "TWW":"荃灣西", "NAC":"南昌", "OLY":"奧運", "AUS":"柯士甸", "ETS":"尖東", "HUH":"紅磡", "TKW":"土瓜灣", "SUW":"宋皇臺", "CKA":"啟德", "HIK":"顯示", "TAW":"大圍", "STW":"沙田圍", "CIO":"第一城", "SHM":"石門", "TSH":"大水坑", "HEO":"恆安", "MOS":"馬鞍山", "WKS":"烏溪沙",
+            "TUM":"屯門", "SIH":"兆康", "TIS":"天水圍", "YUL":"元朗", "KSR":"錦上路", "TWW":"荃灣西", "NAC":"南昌", "OLY":"奧運", "AUS":"柯甸", "ETS":"尖東", "HUH":"紅磡", "TKW":"土瓜灣", "SUW":"宋皇臺", "CKA":"啟德", "HIK":"顯示", "TAW":"大圍", "STW":"沙田圍", "CIO":"第一城", "SHM":"石門", "TSH":"大水坑", "HEO":"恆安", "MOS":"馬鞍山", "WKS":"烏溪沙",
             "EXC":"會展", "MKK":"旺角東", "SHT":"沙田", "FOT":"火炭", "RAC":"馬場", "UNI":"大學", "TAP":"大埔墟", "TWO":"太和", "FAN":"粉嶺", "SHS":"上水", "LOW":"羅湖", "LMC":"落馬洲", "HOK":"香港", "KOW":"九龍", "TSY":"青衣", "SUN":"欣澳", "TUC":"東涌", "AIR":"機場", "AWE":"博覽館", "DIS":"迪士尼", "OCP":"海洋公園", "WCH":"黃竹坑", "LET":"利東", "WOH":"海怡半島"
         };
 
@@ -122,7 +122,7 @@
             panelContent.innerHTML = `<div class="loading-text">路綫已選定，請點擊右側選擇車站...</div>`;
         }
         // ==========================================
-        // 3. 實時列車時間獲取通道（特權環境真直連 · 零 Proxy 免代理版）
+        // 3. 實時列車時間獲取通道（0延時主動特聯動 · 零 Proxy 免代理版）
         // ==========================================
         async function fetchMtrData() {
             let L = document.getElementById("line-select").value;
@@ -176,11 +176,18 @@
                         });
                     }
                 }
+                
+                // 💥【特急令 1】：數據一到，立刻強行刷新 UI 畫面！
+                renderUI();
+                
+                // 💥【特急令 2】：UI 刷新完後，立刻強行驅動跑馬燈去檢查畫面，消滅 1 秒時間差！
+                await fetchMtrStatusNotice();
+
             } catch (e) { console.log("列車訊號對接中..."); }
         }
 
         // ==========================================
-        // 🌟 智慧跑馬燈判定：只要這條路綫沒車，100% 變黃色！
+        // 🌟 智慧判定：只要畫面出現 TERMINATED，跑馬燈 100% 同步變黃！
         // ==========================================
         async function fetchMtrStatusNotice() {
             let L = document.getElementById("line-select").value;
@@ -197,14 +204,13 @@
                 let marquee = document.getElementById("notice-marquee");
                 
                 let isCurrentLineTerminated = false;
-                let panelContentText = document.getElementById("panel-content").innerText;
-                if (panelContentText.includes("TERMINATED") || panelContentText.includes("暫無班次")) {
+                let panelContent = document.getElementById("panel-content");
+                if (panelContent && (panelContent.innerText.includes("TERMINATED") || panelContent.innerText.includes("暫無班次"))) {
                     isCurrentLineTerminated = true;
                 }
 
                 let lineName = MTR_DATA[L] ? MTR_DATA[L].name : "該路綫";
 
-                // 【全新邏輯】：只要滿足條件 1（沒車了），直接強制引爆黃色跑馬燈！
                 if (isCurrentLineTerminated) {
                     okBar.style.display = "none"; alertBar.style.display = "block";
                     
@@ -327,10 +333,9 @@
             if (apiInterval) { clearInterval(apiInterval); }
             if (uiInterval) { clearInterval(uiInterval); }
             
+            // 點選車站的一瞬間，立刻光速出擊抓取資料，主動驅動前台同步變色！
             fetchMtrData().then(function() { 
                 uiInterval = setInterval(renderUI, 1000); 
-                // 核心智慧連動：UI一渲染完，立刻命令頂層跑馬燈去檢查是不是沒車，實現一秒同步變黃色！
-                setTimeout(fetchMtrStatusNotice, 200);
             });
             apiInterval = setInterval(fetchMtrData, 30000);
         }
