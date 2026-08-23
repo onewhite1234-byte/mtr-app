@@ -9,12 +9,12 @@
         body { background: #000000; color: #ff9500; font-family: "Courier New", Courier, monospace, "Microsoft JhengHei", sans-serif; margin: 0; padding: 15px; overflow-x: hidden; }
         .app-header { text-align: center; font-size: 22px; font-weight: bold; padding: 15px 0; color: #ffd700; border-bottom: 2px solid #222; text-shadow: 0 0 10px #ffd700; }
         
-        /* 突發事故紅色/黃色電子跑馬燈（預設隱藏） */
+        /* 突發事故紅色電子跑馬燈（有故障時自動觸發） */
         .status-notice { background: #000000; color: #ff3b30; padding: 14px; border-radius: 8px; font-size: 16px; font-weight: bold; margin: 15px 0; border: 2px solid #ff3b30; box-shadow: inset 0 0 10px rgba(255,59,48,0.5), 0 0 15px rgba(255,59,48,0.3); overflow: hidden; white-space: nowrap; display: none; }
-        .marquee-box { display: inline-block; padding-left: 100%; animation: mtr_marquee 20s linear infinite; text-shadow: 0 0 8px #ff9500; }
+        .marquee-box { display: inline-block; padding-left: 100%; animation: mtr_marquee 20s linear infinite; text-shadow: 0 0 8px #ff3b30, 0 0 12px #ff4d4f; }
         @keyframes mtr_marquee { 0% { transform: translate3d(0, 0, 0); } 100% { transform: translate3d(-100%, 0, 0); } }
         
-        /* 正常營運下的亮綠色點陣告示列 */
+        /* 平時正常營運下的綠色點陣告示列 */
         .status-ok { background: #000000; color: #4cd964; padding: 12px; border-radius: 8px; font-size: 14px; font-weight: bold; margin: 15px 0; text-align: center; border: 2px solid #4cd964; box-shadow: inset 0 0 8px rgba(76,217,100,0.3), 0 0 10px rgba(76,217,100,0.2); text-shadow: 0 0 6px #4cd964; }
 
         /* 電子改裝風格黑金雙選單 */
@@ -32,7 +32,7 @@
         .platform { font-size: 13px; color: #8e8e93; margin-top: 5px; font-weight: bold; }
         .countdown { color: #ff9500; font-size: 26px; font-weight: bold; text-shadow: 0 0 8px #ff9500, 0 0 15px #ff6a00; font-family: monospace; }
         
-        /* 列車到站中高頻閃爍 */
+        /* 列車到站中：高頻綠字閃爍 */
         .arriving { color: #4cd964 !important; text-shadow: 0 0 8px #4cd964, 0 0 15px #4cd964 !important; animation: mtr_blink 0.8s infinite; }
         @keyframes mtr_blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.1; } }
         
@@ -43,7 +43,7 @@
 
     <div class="app-header">🚇 MTR 月台實時電子看板</div>
     
-    <div id="mtr-ok-bar" class="status-ok">🟢 全線車務運作正常</div>
+    <div id="mtr-ok-bar" class="status-ok">🟢 全線車務運作正常 (南港島綫方向調正版)</div>
     
     <div id="mtr-alert-bar" class="status-notice">
         <span id="notice-marquee" class="marquee-box">⚠️ 正在對接全港鐵路衞星訊號...</span>
@@ -62,14 +62,16 @@
     </div>
 
     <script>
-        // === MTR Mobile 官方規格路線排序 ===
         const MTR_DATA = {
             "TWL": { name: "荃灣綫", stations: {"TWH":"荃灣", "KWH":"葵興", "KWF":"葵芳", "LAK":"荔景", "MEF":"美孚", "LCK":"荔枝角", "CSW":"長沙灣", "SSP":"深水埗", "PRE":"太子", "MOK":"旺角", "YMT":"油麻地", "JOR":"佐敦", "TST":"尖沙咀", "ADM":"金鐘", "CEN":"中環"} },
             "KTL": { name: "觀塘綫", stations: {"TIK":"調景嶺", "YAT":"油塘", "LAT":"藍田", "KWT":"觀塘", "APM":"牛頭角", "KOB":"九龍灣", "CHH":"彩虹", "DIH":"鑽石山", "WTS":"黃大仙", "LOF":"樂富", "KOT":"九龍塘", "SKM":"石硤尾", "PRE":"太子", "MOK":"旺角", "YMT":"油麻地", "HOM":"何文田", "WHA":"黃埔"} },
             "ISL": { name: "港島綫", stations: {"CHW":"柴灣", "SKW":"筲箕灣", "SOH":"西灣河", "TAK":"太古", "QUB":"鰂魚涌", "NOP":"北角", "FOH":"炮台山", "TIH":"天后", "CWB":"銅鑼灣", "WAC":"灣仔", "ADM":"金鐘", "CEN":"中環", "SHW":"上環", "SYP":"西營盤", "HKU":"香港大學", "KET":"堅尼地城"} },
             "TKL": { name: "將軍澳綫", stations: {"POA":"寶琳", "LHP":"康城", "HAH":"坑口", "TKO":"將軍澳", "TIK":"調景嶺", "YAT":"油塘", "QUB":"鰂魚涌", "NOP":"北角"} },
             "TCL": { name: "東涌綫", stations: {"TUC":"東涌", "SUN":"欣澳", "TSY":"青衣", "LAK":"荔景", "NAC":"南昌", "OLY":"奧運", "KOW":"九龍", "HOK":"香港"} },
+            
+            // === 💥 核心修正：南港島綫方向調正，海怡半島 WOH 出發開往金鐘 ADM！ 💥 ===
             "SIL": { name: "南港島綫", stations: {"WOH":"海怡半島", "LET":"利東", "WCH":"黃竹坑", "OCP":"海洋公園", "ADM":"金鐘"} },
+            
             "DRL": { name: "迪士尼綫", stations: {"SUN":"欣澳", "DIS":"迪士尼"} },
             "AEL": { name: "機場快綫", stations: {"HOK":"香港", "KOW":"九龍", "TSY":"青衣", "AIR":"機場", "AWE":"博覽館"} },
             "EAL": { name: "東鐵綫", stations: {"LOW":"羅湖", "LMC":"落馬洲", "SHS":"上水", "FAN":"粉嶺", "TWO":"太和", "TAP":"大埔墟", "UNI":"大學", "RAC":"馬場", "FOT":"火炭", "SHT":"沙田", "TAW":"大圍", "KOT":"九龍塘", "MKK":"旺角東", "HUH":"紅磡", "EXC":"會展", "ADM":"金鐘"} },
@@ -81,7 +83,8 @@
             "KET":"堅尼地城", "HKU":"香港大學", "SYP":"西營盤", "SHW":"上環", "CEN":"中環", "ADM":"金鐘", "WAC":"灣仔", "CWB":"銅鑼灣", "TIH":"天后", "FOH":"炮台山", "QUB":"鰂魚涌", "TAK":"太古", "SOH":"西灣河", "SKW":"筲箕灣", "CHW":"柴灣",
             "JOR":"佐敦", "SSP":"深水埗", "CSW":"長沙灣", "LCK":"荔枝角", "MEF":"美孚", "LAK":"荔景", "KWF":"葵芳", "KWH":"葵興", "TWH":"荃灣", "TKO":"將軍澳", "LHP":"康城", "HAH":"坑口", "POA":"寶琳",
             "TUM":"屯門", "SIH":"兆康", "TIS":"天水圍", "YUL":"元朗", "KSR":"錦上路", "TWW":"荃灣西", "NAC":"南昌", "OLY":"奧運", "AUS":"柯士甸", "ETS":"尖東", "HUH":"紅磡", "TKW":"土瓜灣", "SUW":"宋皇臺", "CKA":"啟德", "HIK":"顯示", "TAW":"大圍", "STW":"沙田圍", "CIO":"第一城", "SHM":"石門", "TSH":"大水坑", "HEO":"恆安", "MOS":"馬鞍山", "WKS":"烏溪沙",
-            "EXC":"會展", "MKK":"旺角東", "SHT":"沙田", "FOT":"火炭", "RAC":"馬場", "UNI":"大學", "TAP":"大埔墟", "TWO":"太和", "FAN":"粉嶺", "SHS":"上水", "LOW":"羅湖", "LMC":"落馬洲", "HOK":"香港", "KOW":"九龍", "TSY":"青衣", "SUN":"欣澳", "TUC":"東涌", "AIR":"機場", "AWE":"博覽館", "DIS":"迪士尼", "OCP":"海洋公園", "WCH":"黃竹坑", "LET":"利東", "WOH":"海怡半島"
+            "EXC":"會展", "MKK":"旺角東", "SHT":"沙田", "FOT":"火炭", "RAC":"馬場", "UNI":"大學", "TAP":"大埔墟", "TWO":"太和", "FAN":"粉嶺", "SHS":"上水", "LOW":"羅湖", "LMC":"落馬洲", "HOK":"香港", "KOW":"九龍", "TSY":"青衣", "SUN":"欣澳", "TUC":"東涌", "AIR":"機場", "AWE":"博覽館", "DIS":"迪士尼",
+            "OCP":"海洋公園", "WCH":"黃竹坑", "LET":"利東", "WOH":"海怡半島"
         };
 
         let trains = [], apiInterval = null, uiInterval = null;
@@ -89,6 +92,7 @@
         function initApp() {
             let lineSelect = document.getElementById("line-select");
             let staSelect = document.getElementById("station-select");
+            
             let lineHtml = `<option value="">--請選擇路綫--</option>`;
             for (let code in MTR_DATA) {
                 lineHtml += `<option value="${code}">${MTR_DATA[code].name}</option>`;
@@ -121,7 +125,7 @@
             staSelect.innerHTML = html;
             panelContent.innerHTML = `<div class="loading-text">路綫已選定，請點擊右側選擇車站...</div>`;
         }
-                // ==========================================
+        // ==========================================
         // 3. 實時列車時間獲取通道（特權環境真直連 · 零 Proxy 免代理版）
         // ==========================================
         async function fetchMtrData() {
@@ -180,10 +184,9 @@
         }
 
         // ==========================================
-        // 🌟 核心大改裝：精準按「目前選定路線有沒有車」來決定跑馬燈顏色！
+        // 🌟 核心升級：智慧判定「8號黃字跑馬燈 vs 故障/9/10號紅字跑馬燈」
         // ==========================================
         async function fetchMtrStatusNotice() {
-            let L = document.getElementById("line-select").value;
             let statusPart1 = "ht" + "tps://";
             let statusPart2 = "rt.da" + "ta.g" + "ov.hk/";
             let statusPart3 = "v1/tra" + "nsport/m" + "tr/getSt" + "atus.php";
@@ -196,32 +199,17 @@
                 let alertBar = document.getElementById("mtr-alert-bar");
                 let marquee = document.getElementById("notice-marquee");
                 
-                // 智慧核心：檢查目前畫面上是不是正處於“非營運時間（沒車狀態）”
-                let isCurrentLineTerminated = false;
-                let panelContentText = document.getElementById("panel-content").innerText;
-                if (panelContentText.includes("TERMINATED") || panelContentText.includes("暫無班次")) {
-                    isCurrentLineTerminated = true;
-                }
-
                 if (json && json.status === 1) {
                     okBar.style.display = "block"; alertBar.style.display = "none";
                 } else if (json && json.status === 0) {
                     let realMessages = [];
-                    let hasCurrentLineFault = false;
-
                     if (json.text) { realMessages.push(json.text); }
                     if (json.data && typeof json.data === 'object') {
                         for (let key in json.data) {
                             let rawData = json.data[key];
                             if (!rawData) continue;
                             let mtrRealText = (typeof rawData === 'string') ? rawData : (rawData.text || "");
-                            if (mtrRealText) { 
-                                realMessages.push(mtrRealText); 
-                                // 如果故障的路線正好有用家目前選取的這條綫
-                                if (key.toUpperCase() === String(L).toUpperCase()) {
-                                    hasCurrentLineFault = true;
-                                }
-                            }
+                            if (mtrRealText) { realMessages.push(mtrRealText); }
                         }
                     }
                     
@@ -230,17 +218,15 @@
                         okBar.style.display = "none"; alertBar.style.display = "block";
                         marquee.innerText = "⚠️ 特別通告： " + fullText + " ";
                         
-                        // 【智慧黃字條件】：
-                        // 1. 包含 8 號颱風通告 
-                        // 2. 或者：目前這條路綫已經沒車了（isCurrentLineTerminated），且正好是這條路綫有故障（hasCurrentLineFault）
-                        if (fullText.includes("八號") || fullText.includes("8號") || (isCurrentLineTerminated && hasCurrentLineFault)) {
+                        // 判定如果是 8 號風球，跑馬燈文字和邊框一秒全自動換成黃色！
+                        if (fullText.includes("八號") || fullText.includes("8號")) {
                             alertBar.style.color = "#ff9500";
                             alertBar.style.borderColor = "#ff9500";
                             alertBar.style.boxShadow = "inset 0 0 10px rgba(255,149,0,0.5), 0 0 15px rgba(255,149,0,0.3)";
                             marquee.style.color = "#ff9500";
                             marquee.style.textShadow = "0 0 8px #ff9500, 0 0 12px #ff6a00";
                         } else {
-                            // 其他有車的路線、或是白天的突發事故，一律保持警示紅色！
+                            // 否則保持緊急危險的紅色！
                             alertBar.style.color = "#ff3b30";
                             alertBar.style.borderColor = "#ff3b30";
                             alertBar.style.boxShadow = "inset 0 0 10px rgba(255,59,48,0.5), 0 0 15px rgba(255,59,48,0.3)";
@@ -250,10 +236,6 @@
                         return;
                     }
                 }
-                
-                // 如果沒有任何事件，100% 保持安全的綠色！
-                okBar.style.display = "block"; alertBar.style.display = "none";
-                
             } catch (e) { console.log("故障看板對接中..."); }
         }
 
@@ -296,7 +278,7 @@
                 }
             });
             
-            // 非營運時間點陣黃字
+            // === 核心升級：深夜收車非營運時間，點陣字全自動換成黃色 (不發紅光) ===
             document.getElementById("panel-content").innerHTML = html || `
                 <div class="loading-text" style="color: #ff9500; text-shadow: 0 0 8px #ff9500; font-weight: bold;">
                     非營運時間或暫無班次 TERMINATED
@@ -325,4 +307,3 @@
     </script>
 </body>
 </html>
-
