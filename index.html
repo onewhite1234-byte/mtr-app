@@ -43,7 +43,7 @@
 
     <div class="app-header">🚇 MTR 月台實時電子看板</div>
     
-    <div id="mtr-ok-bar" class="status-ok">🟢 全線車務運作正常 (安全直連通道已加密)</div>
+    <div id="mtr-ok-bar" class="status-ok">🟢 全線車務運作正常 </div>
     
     <div id="mtr-alert-bar" class="status-notice">
         <span id="notice-marquee" class="marquee-box">⚠️ 正在對接全港鐵路衞星訊號...</span>
@@ -164,6 +164,9 @@
 
         // 獨立背景功能：故障公告欄（同樣 100% 官方直連，安全不卡死）
                 // === 測試專用：強制觸發「八號風球」模擬跑馬燈版 ===
+               // ==========================================
+        // 🌟 獨立背景功能：真．全港鐵路故障狀態自動監測（恢復官方直連版）
+        // ==========================================
         async function fetchMtrStatusNotice() {
             let statusPart1 = "ht" + "tps://";
             let statusPart2 = "rt.da" + "ta.g" + "ov.hk/";
@@ -171,21 +174,32 @@
             let statusUrl = statusPart1 + statusPart2 + statusPart3;
             
             try {
-                // 為了讓你現在能看到特效，我們在這裡直接攔截，強行引爆紅色跑馬燈！
+                let res = await fetch(statusUrl);
+                let json = await res.json();
                 let okBar = document.getElementById("mtr-ok-bar");
                 let alertBar = document.getElementById("mtr-alert-bar");
                 let marquee = document.getElementById("notice-marquee");
                 
-                // 強制隱藏正常綠光，100% 啟動緊急紅色外框
-                okBar.style.display = "none";
-                alertBar.style.display = "block"; 
-                
-                // 模擬颱風天全港線路大減班的跑馬燈字幕
-                marquee.innerText = "⚠️ 突發事故跑馬燈： 【天文台重大通告】八號烈風或暴風信號現正生效！港鐵已啟動颱風防禦計算。屯馬綫露天路段（屯門至荃灣西）班次已調整為 15 分鐘一班；迪士尼綫及機場快綫市區預辦登機服務現已暫停。請乘客合理安排出行時間。 ";
-                
-            } catch (e) { 
-                console.log("故障看板對接中..."); 
-            }
+                // json.status 為 1 代表全港綠色正常，為 0 代表有突發事故！
+                if (json && json.status === 1) {
+                    okBar.style.display = "block";
+                    alertBar.style.display = "none";
+                } else if (json && json.status === 0 && json.data) {
+                    let errs = [];
+                    for (let line in json.data) {
+                        let lineName = MTR_DATA[line] ? MTR_DATA[line].name : line;
+                        errs.push(`【${lineName}警告】${json.data[line].text || "發生突發車務延誤事故"}`);
+                    }
+                    if (errs.length > 0) {
+                        okBar.style.display = "none";
+                        alertBar.style.display = "block"; 
+                        marquee.innerText = "⚠️ 突發事故： " + errs.join("  |  ") + " —— 請乘客提前做好出行準備。 ";
+                    } else {
+                        okBar.style.display = "block";
+                        alertBar.style.display = "none";
+                    }
+                }
+            } catch (e) { console.log("故障看板對接中..."); }
         }
 
 
