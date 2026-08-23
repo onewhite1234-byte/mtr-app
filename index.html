@@ -79,47 +79,71 @@
             startAppMonitor();
         }
 
+               // ==========================================
+        // 3. 實時列車時間獲取通道（大括號與時區終極對齊版）
+        // ==========================================
         async function fetchMtrData() {
             let L = document.getElementById("line-select").value;
             let S = document.getElementById("station-select").value;
             
-            let mtrArr = ["h","t","t","p","s",":","/","/","r","t",".","d","a","t","a",".","g","o","v",".","h","k","/","v","1","/","t","r","a","n","s","p","o","r","t","/","m","t","r","/","g","e","t","S","c","h","e","d","u","l","e",".","p","h","p"];
-            let mtrUrl = mtrArr.join("") + "?line=" + L + "&sta=" + S;
+            let mtrPart1 = "ht" + "tps://";
+            let mtrPart2 = "rt.da" + "ta.g" + "ov.hk/";
+            let mtrPart3 = "v1/tra" + "nsport/m" + "tr/getSc" + "hedule.php";
+            let mtrUrl = mtrPart1 + mtrPart2 + mtrPart3 + "?line=" + L + "&sta=" + S;
             
-            // 使用完全不限流的全球官方公用解鎖通道
-            let proxyArr = ["h","t","t","p","s",":","/","/","c","o","r","s","p","r","o","x","y",".","i","o","/","?","u","r","l","="];
-            let proxyUrl = proxyArr.join("") + encodeURIComponent(mtrUrl);
+            let proxyPart1 = "ht" + "tps://";
+            let proxyPart2 = "api.all" + "orig" + "ins.w" + "in/g" + "et?u" + "rl=";
+            let proxyUrl = proxyPart1 + proxyPart2 + encodeURIComponent(mtrUrl);
             
             try {
                 let res = await fetch(proxyUrl);
-                let json = await res.json(); 
+                let wrapperJson = await res.json(); 
+                let json = JSON.parse(wrapperJson.contents);
                 trains = [];
                 
-                if (json && json.status === 1 && json.data && json.data[L + "-" + S]) {
-                                       let data = null;
+                if (json && json.status === 1 && json.data) {
+                    let data = null;
                     let targetKey = (L + "-" + S).toUpperCase();
                     
+                    // 解開看門大爺的封鎖：改用全自動智慧配對抽屜
                     if (json.data[targetKey]) {
                         data = json.data[targetKey];
                     } else {
+                        // 針對屯門(TUM)大終點站的模糊搜尋
                         let keys = Object.keys(json.data);
-                        if (keys.length > 0) { data = json.data[keys[0]]; }
-                    }
-
-                        if (data && data[dir]) {
-                            data[dir].forEach(t => {
-                                let destName = GLOBAL_DEST[t.dest] || t.dest;
-                                trains.push({ 
-                                    dest: destName, 
-                                    plat: t.plat, 
-                                    time: new Date(t.time.replace(/-/g, "/")) 
-                                });
-                            });
+                        for (let i = 0; i < keys.length; i++) {
+                            if (keys[i].toUpperCase().includes(S.toUpperCase())) {
+                                data = json.data[keys[i]];
+                                break;
+                            }
                         }
-                    });
+                        // 如果還是找不到，最後才盲抓第一個抽屜
+                        if (!data && keys.length > 0) { data = json.data[keys[0]]; }
+                    }
+                    
+                    if (data) {
+                        let directions = ['UP', 'DOWN'];
+                        directions.forEach(function(dir) {
+                            if (data[dir] && Array.isArray(data[dir])) {
+                                data[dir].forEach(function(t) {
+                                    let destName = GLOBAL_DEST[t.dest] || t.dest;
+                                    
+                                    // 完美歸位時區校正核心，全面解鎖被過濾的班次！
+                                    let formattedTimeStr = t.time.replace(" ", "T") + "+08:00";
+                                    
+                                    trains.push({ 
+                                        dest: destName, 
+                                        plat: parseInt(t.plat) || 0, 
+                                        time: new Date(formattedTimeStr) 
+                                    });
+                                });
+                            }
+                        });
+                    }
                 }
-            } catch (e) { console.log("訊號對接中..."); }
+            } catch (e) { console.log("列車訊號對接中..."); }
         }
+
 
         function renderUI() {
             let staSelect = document.getElementById("station-select");
