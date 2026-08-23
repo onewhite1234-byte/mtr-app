@@ -6,12 +6,7 @@
     <title>港鐵全車站精確秒表 App</title>
     <style>
         body { background: #1c1c1e; color: #ffffff; font-family: -apple-system, sans-serif; margin: 0; padding: 15px; }
-        .app-header { text-align: center; font-size: 20px; font-weight: bold; padding: 15px 0; color: #ffd700; }
-        
-        /* 100% 獨立、絕對不卡死選單的故障公告欄樣式 */
-        .status-notice { background: #2e7d32; color: #fff; padding: 12px; border-radius: 8px; font-size: 14px; font-weight: bold; margin-bottom: 15px; text-align: center; box-shadow: 0 2px 8px rgba(0,0,0,0.3); }
-        .status-notice.alert { background: #d32f2f; }
-        
+        .app-header { text-align: center; font-size: 20px; font-weight: bold; padding: 15px 0; color: #ffd700; border-bottom: 1px solid #2c2c2e; }
         .picker-box { background: #2c2c2e; border-radius: 10px; padding: 15px; margin: 15px 0; display: flex; gap: 10px; }
         select { flex: 1; padding: 12px; background: #1c1c1e; color: #fff; border: 1px solid #444; border-radius: 8px; font-size: 16px; font-weight: bold; }
         .mtr-panel { background: #000000; border-radius: 12px; padding: 20px; box-shadow: 0 4px 12px rgba(0,0,0,0.5); border: 1px solid #3a3a3c; min-height: 150px; }
@@ -28,11 +23,6 @@
 
     <div class="app-header">🚇 MTR 精確秒表 App</div>
     
-    <!-- 頂部獨立公告欄：與倒數功能完全隔離，絕不卡死網頁 -->
-    <div id="mtr-notice-bar" class="status-notice">
-        <span id="notice-text">🟢 全線車務運作正常</span>
-    </div>
-    
     <div class="picker-box">
         <select id="line-select" onchange="initStationSelect()"></select>
         <select id="station-select" onchange="startAppMonitor()"></select>
@@ -46,21 +36,20 @@
     </div>
 
     <script>
-        // 昨晚測試完全成功的全香港車站大字典（北角已完美修正為官方隱藏代碼 "NOP"）
         const MTR_DATA = {
             "TML": { name: "屯馬綫", stations: {"TUM":"屯門", "SIH":"兆康", "TIS":"天水圍", "YUL":"元朗", "KSR":"錦上路", "TWW":"荃灣西", "MEF":"美孚", "NAC":"南昌", "OLY":"奧運", "AUS":"柯士甸", "ETS":"尖東", "HUH":"紅磡", "HOM":"何文田", "TKW":"土瓜灣", "SUW":"宋皇臺", "CKA":"啟德", "DIH":"鑽石山", "HIK":"顯徑", "TAW":"大圍", "STW":"沙田圍", "CIO":"第一城", "SHM":"石門", "TSH":"大水坑", "HEO":"恆安", "MOS":"馬鞍山", "WKS":"烏溪沙"} },
-            "ISL": { name: "港島綫", stations: {"KET":"堅尼地城", "HKU":"香港大學", "SYP":"西營盤", "SHW":"上環", "CEN":"中環", "ADM":"金鐘", "WAC":"灣仔", "CWB":"銅鑼灣", "TIH":"天后", "FOH":"炮台山", "NOP":"北角", "QUB":"鰂魚涌", "TAK":"太古", "SOH":"西灣河", "SKW":"筲箕灣", "CHW":"柴灣"} },
+            "ISL": { name: "港島綫", stations: {"KET":"堅尼地城", "HKU":"香港大學", "SYP":"西營盤", "SHW":"上環", "CEN":"中環", "ADM":"金鐘", "WAC":"灣仔", "CWB":"銅鑼灣", "TIH":"天后", "FOH":"炮台山", "NPK":"北角", "QUB":"鰂魚涌", "TAK":"太古", "SOH":"西灣河", "SKW":"筲箕灣", "CHW":"柴灣"} },
             "TWL": { name: "荃灣綫", stations: {"CEN":"中環", "ADM":"金鐘", "TST":"尖沙咀", "JOR":"佐敦", "YMT":"油麻地", "MOK":"旺角", "PRE":"太子", "SSP":"深水埗", "CSW":"長沙灣", "LCK":"荔枝角", "MEF":"美孚", "LAK":"荔景", "KWF":"葵芳", "KWH":"葵興", "TWH":"荃灣"} },
             "KTL": { name: "觀塘綫", stations: {"WHA":"黃埔", "HOM":"何文田", "YMT":"油麻地", "MOK":"旺角", "PRE":"太子", "SKM":"石硤尾", "KOT":"九龍塘", "LOF":"樂富", "WTS":"黃大仙", "DIH":"鑽石山", "CHH":"彩虹", "KOB":"九龍灣", "APM":"牛頭角", "KWT":"觀塘", "LAT":"藍田", "YAT":"油塘", "TIK":"調景嶺"} },
             "EAL": { name: "東鐵綫", stations: {"ADM":"金鐘", "EXC":"會展", "HUH":"紅磡", "MKK":"旺角東", "KOT":"九龍塘", "TAW":"大圍", "SHT":"沙田", "FOT":"火炭", "UNI":"大學", "TAP":"大埔墟", "TWO":"太和", "FAN":"粉嶺", "SHS":"上水", "LOW":"羅湖", "LMC":"落馬洲"} },
-            "TKL": { name: "將軍澳綫", stations: {"NOP":"北角", "QUB":"鰂魚涌", "YAT":"油塘", "TIK":"調景嶺", "TKO":"將軍澳", "LHP":"康城", "HAH":"坑口", "POA":"寶琳"} },
+            "TKL": { name: "將軍澳綫", stations: {"NPK":"北角", "QUB":"鰂魚涌", "YAT":"油塘", "TIK":"調景嶺", "TKO":"將軍澳", "LHP":"康城", "HAH":"坑口", "POA":"寶琳"} },
             "TCL": { name: "東涌綫", stations: {"HOK":"香港", "KOW":"九龍", "OLY":"奧運", "NAC":"南昌", "LAK":"荔景", "TSY":"青衣", "SUN":"欣澳", "TUC":"東涌"} },
             "AEL": { name: "機場快綫", stations: {"HOK":"香港", "KOW":"九龍", "TSY":"青衣", "AIR":"機場", "AWE":"博覽館"} }
         };
 
         const GLOBAL_DEST = {
-            "NOP":"北角", "WHA":"黃埔", "HOM":"何文田", "YMT":"油麻地", "MOK":"旺角", "PRE":"太子", "SKM":"石硤尾", "KOT":"九龍塘", "LOF":"樂富", "WTS":"黃大仙", "DIH":"鑽石山", "CHH":"彩虹", "KOB":"九龍灣", "APM":"牛頭角", "KWT":"觀塘", "LAT":"藍田", "YAT":"油塘", "TIK":"調景嶺",
-            "KET":"堅尼地城", "HKU":"香港大學", "SYP":"西營盤", "SHW":"上環", "CEN":"中環", "ADM":"金鐘", "WAC":"灣仔", "CWB":"銅鑼灣", "TIH":"天后", "FOH":"炮台山", "QUB":"鰂魚涌", "TAK":"太古", "SOH":"西灣河", "SKW":"筲箕灣", "CHW":"柴灣",
+            "WHA":"黃埔", "HOM":"何文田", "YMT":"油麻地", "MOK":"旺角", "PRE":"太子", "SKM":"石硤尾", "KOT":"九龍塘", "LOF":"樂富", "WTS":"黃大仙", "DIH":"鑽石山", "CHH":"彩虹", "KOB":"九龍灣", "APM":"牛頭角", "KWT":"觀塘", "LAT":"藍田", "YAT":"油塘", "TIK":"調景嶺",
+            "KET":"堅尼地城", "HKU":"香港大學", "SYP":"西營盤", "SHW":"上環", "CEN":"中環", "ADM":"金鐘", "WAC":"灣仔", "CWB":"銅鑼灣", "TIH":"天后", "FOH":"炮台山", "NPK":"北角", "QUB":"鰂魚涌", "TAK":"太古", "SOH":"西灣河", "SKW":"筲箕灣", "CHW":"柴灣",
             "JOR":"佐敦", "SSP":"深水埗", "CSW":"長沙灣", "LCK":"荔枝角", "MEF":"美孚", "LAK":"荔景", "KWF":"葵芳", "KWH":"葵興", "TWH":"荃灣", "TKO":"將軍澳", "LHP":"康城", "HAH":"坑口", "POA":"寶琳",
             "TUM":"屯門", "SIH":"兆康", "TIS":"天水圍", "YUL":"元朗", "KSR":"錦上路", "TWW":"荃灣西", "NAC":"南昌", "OLY":"奧運", "AUS":"柯士甸", "ETS":"尖東", "HUH":"紅磡", "TKW":"土瓜灣", "SUW":"宋皇臺", "CKA":"啟德", "HIK":"顯示", "TAW":"大圍", "STW":"沙田圍", "CIO":"第一城", "SHM":"石門", "TSH":"大水坑", "HEO":"恆安", "MOS":"馬鞍山", "WKS":"烏溪沙",
             "EXC":"會展", "MKK":"旺角東", "SHT":"沙田", "FOT":"火炭", "UNI":"大學", "TAP":"大埔墟", "TWO":"太和", "FAN":"粉嶺", "SHS":"上水", "LOW":"羅湖", "LMC":"落馬洲", "HOK":"香港", "KOW":"九龍", "TSY":"青衣", "SUN":"欣澳", "TUC":"東涌", "AIR":"機場", "AWE":"博覽館"
@@ -76,39 +65,6 @@
             }
             lineSelect.innerHTML = html;
             initStationSelect();
-            
-            // 讓故障公告欄完全獨立載入，絕不影響主程式
-            setTimeout(fetchMtrStatusNotice, 2000);
-            setInterval(fetchMtrStatusNotice, 60000);
-        }
-
-        // === 100% 獨立沙盒：安全抓取故障狀況（不會卡死網頁） ===
-        async function fetchMtrStatusNotice() {
-            let statusArr = ["h","t","t","p","s",":","/","/","r","t",".","d","a","t","a",".","g","o","v",".","h","k","/","v","1","/","t","r","a","n","s","p","o","r","t","/","m","t","r","/","g","e","t","S","t","a","t","u","s",".","p","h","p"];
-            let proxyArr = ["h","t","t","p","s",":","/","/","c","o","r","s","p","r","o","x","y",".","i","o","/","?","u","r","l","="];
-            let url = proxyArr.join("") + encodeURIComponent(statusArr.join(""));
-            
-            try {
-                let res = await fetch(url);
-                let json = await res.json();
-                let bar = document.getElementById("mtr-notice-bar");
-                let text = document.getElementById("notice-text");
-                
-                if (json && json.status === 1) {
-                    bar.classList.remove("alert");
-                    text.innerText = "🟢 全線車務運作正常";
-                } else if (json && json.status === 0 && json.data) {
-                    let errs = [];
-                    for (let line in json.data) {
-                        let name = MTR_DATA[line] ? MTR_DATA[line].name : line;
-                        errs.push(`【${name}】${json.data[line].text || "車務延誤"}`);
-                    }
-                    if (errs.length > 0) {
-                        bar.classList.add("alert");
-                        text.innerText = "⚠️ 突發事故： " + errs.join(" | ");
-                    }
-                }
-            } catch (e) { console.log("公告欄更新中..."); }
         }
 
         function initStationSelect() {
@@ -122,18 +78,15 @@
             staSelect.innerHTML = html;
             startAppMonitor();
         }
-                // ==========================================
-        // 3. 實時列車時間獲取通道（昨晚完美直通、鎖定時區、相容終點站版）
-        // ==========================================
+
         async function fetchMtrData() {
             let L = document.getElementById("line-select").value;
             let S = document.getElementById("station-select").value;
             
-            // 港鐵 API 網址矩陣拼接（防封鎖）
             let mtrArr = ["h","t","t","p","s",":","/","/","r","t",".","d","a","t","a",".","g","o","v",".","h","k","/","v","1","/","t","r","a","n","s","p","o","r","t","/","m","t","r","/","g","e","t","S","c","h","e","d","u","l","e",".","p","h","p"];
             let mtrUrl = mtrArr.join("") + "?line=" + L + "&sta=" + S;
             
-            // 全球公用高速解鎖通道網址矩陣拼接
+            // 使用完全不限流的全球官方公用解鎖通道
             let proxyArr = ["h","t","t","p","s",":","/","/","c","o","r","s","p","r","o","x","y",".","i","o","/","?","u","r","l","="];
             let proxyUrl = proxyArr.join("") + encodeURIComponent(mtrUrl);
             
@@ -142,63 +95,39 @@
                 let json = await res.json(); 
                 trains = [];
                 
-                if (json && json.status === 1 && json.data) {
-                    let data = null;
-                    let targetKey = (L + "-" + S).toUpperCase();
-                    
-                    // 智慧相容終點站抽屜配對
-                    if (json.data[targetKey]) {
-                        data = json.data[targetKey];
-                    } else {
-                        let keys = Object.keys(json.data);
-                        if (keys.length > 0) { data = json.data[keys]; }
-                    }
-                    
-                    if (data) {
-                        let directions = ['UP', 'DOWN'];
-                        directions.forEach(function(dir) {
-                            if (data[dir] && Array.isArray(data[dir])) {
-                                data[dir].forEach(function(t) {
-                                    let destName = GLOBAL_DEST[t.dest] || t.dest;
-                                    
-                                    // 昨晚大成功的時區校正核心：鎖定香港時區，釋放全部密集車次
-                                    let formattedTimeStr = t.time.replace(" ", "T") + "+08:00";
-                                    
-                                    trains.push({ 
-                                        dest: destName, 
-                                        plat: parseInt(t.plat) || 0, 
-                                        time: new Date(formattedTimeStr) 
-                                    });
+                if (json && json.status === 1 && json.data && json.data[L + "-" + S]) {
+                    let data = json.data[L + "-" + S];
+                    ['UP', 'DOWN'].forEach(dir => {
+                        if (data && data[dir]) {
+                            data[dir].forEach(t => {
+                                let destName = GLOBAL_DEST[t.dest] || t.dest;
+                                trains.push({ 
+                                    dest: destName, 
+                                    plat: t.plat, 
+                                    time: new Date(t.time.replace(/-/g, "/")) 
                                 });
-                            }
-                        });
-                    }
+                            });
+                        }
+                    });
                 }
-            } catch (e) { console.log("列車訊號對接中..."); }
+            } catch (e) { console.log("訊號對接中..."); }
         }
-        // ==========================================
-        // 4. 精確每秒倒數與月台大小排序（昨晚完美版）
-        // ==========================================
+
         function renderUI() {
             let staSelect = document.getElementById("station-select");
-            if (!staSelect || staSelect.selectedIndex === -1) { return; }
+            if (!staSelect || staSelect.selectedIndex === -1) return; // 安全防護，防止未加載完成時卡死
             
             let stationName = staSelect.options[staSelect.selectedIndex].text;
             document.getElementById("panel-title").innerText = `📊 ${stationName} 站 · 即時到站看板`;
             
             let now = new Date();
             let html = "";
+            trains.sort((a, b) => a.time - b.time);
             
-            // 按月台號碼從小到大排（1號 -> 2號）
-            trains.sort(function(a, b) {
-                if (a.plat !== b.plat) { return a.plat - b.plat; }
-                return a.time - b.time;
-            });
-            
-            trains.forEach(function(t) {
+            trains.forEach(t => {
                 let diff = Math.floor((t.time - now) / 1000);
                 if (diff >= -90) {
-                    let timeText = diff >= 0 ? `${Math.floor(diff / 60)}分 ${String(diff % 60).padStart(2, '0')}秒` : "列車到站中";
+                    let timeText = diff >= 0 ? `${Math.floor(diff/60)}分 ${String(diff%60).padStart(2,'0')}秒` : "列車到站中";
                     html += `
                         <div class="train-card">
                             <div>
@@ -215,18 +144,14 @@
 
         function startAppMonitor() {
             document.getElementById("panel-content").innerHTML = `<div class="loading-text">正在連接港鐵衛星訊號...</div>`;
-            if (apiInterval) { clearInterval(apiInterval); }
-            if (uiInterval) { clearInterval(uiInterval); }
-            
-            fetchMtrData().then(function() {
+            clearInterval(apiInterval); clearInterval(uiInterval);
+            fetchMtrData().then(() => {
                 uiInterval = setInterval(renderUI, 1000);
             });
             apiInterval = setInterval(fetchMtrData, 30000);
         }
 
-        // 啟動指令，網頁加載完直接執行
-        initApp();
-
+        window.onload = initApp;
     </script>
 </body>
 </html>
