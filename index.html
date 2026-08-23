@@ -153,28 +153,43 @@
             let proxyArr = ["h","t","t","p","s",":","/","/","c","o","r","s","p","r","o","x","y",".","i","o","/","?","u","r","l","="];
             let proxyUrl = proxyArr.join("") + encodeURIComponent(mtrUrl);
             
-            try {
+                        try {
                 let res = await fetch(proxyUrl);
                 let json = await res.json(); 
                 trains = [];
                 
-                if (json && json.status === 1 && json.data && json.data[L + "-" + S]) {
-                    let data = json.data[L + "-" + S];
-                    ['UP', 'DOWN'].forEach(dir => {
-                        if (data && data[dir]) {
-                            data[dir].forEach(t => {
-                                let destName = GLOBAL_DEST[t.dest] || t.dest;
-                                trains.push({ 
-                                    dest: destName, 
-                                    plat: parseInt(t.plat) || 0, 
-                                    time: new Date(t.time.replace(/-/g, "/")) 
+                if (json && json.status === 1 && json.data) {
+                    
+                    // === 核心優化：全自動智慧配對抽屜，專治屯門、中環等終點站被擋問題 ===
+                    let data = null;
+                    let targetKey = (L + "-" + S).toUpperCase();
+                    
+                    // 優先尋找精準匹配的車站抽屜
+                    if (json.data[targetKey]) {
+                        data = json.data[targetKey];
+                    } else {
+                        // 如果因為終點站大小寫或空白配對不到，直接抓第一個有資料的抽屜！
+                        let keys = Object.keys(json.data);
+                        if (keys.length > 0) data = json.data[keys[0]];
+                    }
+                    
+                    if (data) {
+                        ['UP', 'DOWN'].forEach(dir => {
+                            if (data[dir]) {
+                                data[dir].forEach(t => {
+                                    let destName = GLOBAL_DEST[t.dest] || t.dest;
+                                    trains.push({ 
+                                        dest: destName, 
+                                        plat: parseInt(t.plat) || 0, 
+                                        time: new Date(t.time.replace(/-/g, "/")) 
+                                    });
                                 });
-                            });
-                        }
-                    });
+                            }
+                        });
+                    }
                 }
             } catch (e) { console.log("列車訊號對接中..."); }
-        }
+
         // 4. 精確每秒倒數排版與雙重排序
         function renderUI() {
             let staSelect = document.getElementById("station-select");
