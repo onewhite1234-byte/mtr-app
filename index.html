@@ -7,7 +7,7 @@
     <style>
         body { background: #1c1c1e; color: #ffffff; font-family: -apple-system, sans-serif; margin: 0; padding: 15px; }
         .app-header { text-align: center; font-size: 20px; font-weight: bold; padding: 15px 0; color: #ffd700; }
-         
+        
         /* 故障跑馬燈樣式 */
         .status-bar { background: #2e7d32; color: #fff; padding: 12px; border-radius: 8px; font-size: 14px; font-weight: bold; margin-bottom: 15px; overflow: hidden; white-space: nowrap; box-shadow: 0 2px 8px rgba(0,0,0,0.3); text-align: center; }
         .status-bar.alert { background: #d32f2f; text-align: left; } 
@@ -185,21 +185,24 @@
         // ==========================================
         // 3. 實時列車時間獲取通道（全自動智慧直通版）
         // ==========================================
+                // ==========================================
+        // 3. 實時列車時間獲取通道（全自動智慧直通修正版）
+        // ==========================================
         async function fetchMtrData() {
             let picker = document.getElementById("station-select").value;
             if (!picker) return;
             
-            // 完美修正：精準分割出獨立的字串，100% 拒絕陣列錯誤
             let parts = picker.split("-");
-            let L = parts[0]; 
-            let S = parts[1]; 
+            
+            // === 終極修復：精準抓取第一個與第二個字串，告別火星文網址 ===
+            let L = parts[0]; // 拿到 TML
+            let S = parts[1]; // 拿到 MEF
             
             let mtrArr = ["h","t","t","p","s",":","/","/","r","t",".","d","a","t","a",".","g","o","v",".","h","k","/","v","1","/","t","r","a","n","s","p","o","r","t","/","m","t","r","/","g","e","t","S","c","h","e","d","u","l","e",".","p","h","p"];
             let mtrUrl = mtrArr.join("") + "?line=" + L + "&sta=" + S;
             
-            // === 填空位置：請把下面的引號內部，換成你在 Cloudflare 得到的專屬網址 ===
-            // 記得結尾一定要保留 /?url=
-            let myCloudflareProxy = "https://my-mtr-proxy.onewhite1234.workers.dev";
+            // === 這裡請記得換成你在 Cloudflare 得到的專屬私人網址 ===
+            let myCloudflareProxy = "https://workers.dev";
             let proxyUrl = myCloudflareProxy + encodeURIComponent(mtrUrl);
             
             try {
@@ -215,7 +218,7 @@
                         data = json.data[targetKey];
                     } else {
                         let keys = Object.keys(json.data);
-                        if (keys.length > 0) data = json.data[keys[0]];
+                        if (keys.length > 0) data = json.data[keys];
                     }
                     
                     if (data) {
@@ -225,7 +228,7 @@
                                 data[dir].forEach(function(t) {
                                     let destName = GLOBAL_DEST[t.dest] || t.dest;
                                     
-                                    // 鎖定香港標準時區，全面引爆大密集車次
+                                    // 鎖定香港標準時區，全面解鎖隱藏班次
                                     let formattedTimeStr = t.time.replace(" ", "T") + "+08:00";
                                     
                                     trains.push({ 
@@ -240,6 +243,7 @@
                 }
             } catch (e) { console.log("列車訊號對接中..."); }
         }
+
 
         // ==========================================
         // 4. 精確每秒倒數與月台大小排序
