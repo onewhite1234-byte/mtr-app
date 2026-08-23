@@ -96,8 +96,16 @@
                 trains = [];
                 
                 if (json && json.status === 1 && json.data && json.data[L + "-" + S]) {
-                    let data = json.data[L + "-" + S];
-                    ['UP', 'DOWN'].forEach(dir => {
+                                       let data = null;
+                    let targetKey = (L + "-" + S).toUpperCase();
+                    
+                    if (json.data[targetKey]) {
+                        data = json.data[targetKey];
+                    } else {
+                        let keys = Object.keys(json.data);
+                        if (keys.length > 0) { data = json.data[keys[0]]; }
+                    }
+
                         if (data && data[dir]) {
                             data[dir].forEach(t => {
                                 let destName = GLOBAL_DEST[t.dest] || t.dest;
