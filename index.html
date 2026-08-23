@@ -195,9 +195,10 @@
                 // ==========================================
         // 🌟 獨立背景功能：真．100% 中央狀態鎖與全防禦雷達
         // ==========================================
+                // ==========================================
+        // 🌟 獨立背景功能：真．全港鐵路突發故障手動公告監測
+        // ==========================================
         async function fetchMtrStatusNotice() {
-            let L = document.getElementById("line-select").value;
-            
             let statusPart1 = "ht" + "tps://";
             let statusPart2 = "rt.da" + "ta.g" + "ov.hk/";
             let statusPart3 = "v1/tra" + "nsport/m" + "tr/getSt" + "atus.php";
@@ -210,107 +211,46 @@
                 let alertBar = document.getElementById("mtr-alert-bar");
                 let marquee = document.getElementById("notice-marquee");
                 
-                // 💥 鋼鐵判定核心：雙重保險鎖！
-                let isCurrentLineTerminated = false;
-                
-                // 檢查 A：火車陣列是不是空的
-                if (trains.length === 0) {
-                    isCurrentLineTerminated = true;
-                } else if (trains[0] && trains[0].time) {
-                    // 檢查 B：如果有一班很久以後才來的清晨特別車（超過15分鐘）
-                    let nowCheck = new Date();
-                    let diffCheck = Math.floor((trains[0].time - nowCheck) / 1000);
-                    if (diffCheck >= 900) { isCurrentLineTerminated = true; }
-                }
-                
-                // 檢查 C（肉眼同步鎖）：直接偷看前台畫面文字，只要亮起 TERMINATED，立刻鎖死打烊狀態！
+                // 💥 檢查目前網頁中央看板是不是已經由 renderUI 判定為打烊了
                 let panelContent = document.getElementById("panel-content");
-                if (panelContent && (panelContent.innerText.includes("TERMINATED") || panelContent.innerText.includes("暫無班次"))) {
-                    isCurrentLineTerminated = true;
-                }
+                let isCurrentLineTerminated = panelContent && (panelContent.innerText.includes("TERMINATED") || panelContent.innerText.includes("暫無班次"));
 
-                let lineName = MTR_DATA[L] ? MTR_DATA[L].name : "該路綫";
+                // 如果中央看板已經變黃打烊，直接跳出，把控制權完全交給 renderUI，絕不自作聰明刷成綠色！
+                if (isCurrentLineTerminated) { return; }
 
-                // 💥 最高優先權：只要滿足任何一個打烊條件，最頂層無條件 100% 強制變黃色！
-                if (isCurrentLineTerminated) {
-                    okBar.style.display = "none"; 
-                    alertBar.style.display = "block";
-                    
-                    // 完美渲染成優雅的點陣橘黃色霓虹燈特效
-                    alertBar.style.color = "#ff9500";
-                    alertBar.style.borderColor = "#ff9500";
-                    alertBar.style.boxShadow = "inset 0 0 10px rgba(255,149,0,0.5), 0 0 15px rgba(255,149,0,0.3)";
-                    marquee.style.color = "#ff9500";
-                    marquee.style.textShadow = "0 0 8px #ff9500, 0 0 12px #ff6a00";
-                    
-                    // 深夜加料通告：看看官方此時有沒有深夜工程文字
-                    let extraMsg = "";
-                    if (json && json.status === 0) {
-                        let errs = [];
-                        if (json.text) { errs.push(json.text); }
-                        if (json.data && typeof json.data === 'object') {
-                            for (let key in json.data) {
-                                if (json.data[key]) {
-                                    let mtrRealText = (typeof json.data[key] === 'string') ? json.data[key] : (json.data[key].text || "");
-                                    if (mtrRealText) { errs.push(mtrRealText); }
-                                }
-                            }
-                        }
-                        if (errs.length > 0) {
-                            extraMsg = "  |  ⚠️ 深夜突發車務報告： " + errs.join("  |  ");
-                        }
-                    }
-                    
-                    marquee.innerText = `⚠️ 【車務通告】${lineName}現已進入非營運時間。 TERMINATED${extraMsg} `;
-                    return; // 成功變黃，直接攔截返回！
-                }
-
-                // 常規有車營運時的判定
                 if (json && json.status === 1) {
-                    okBar.style.display = "block"; 
-                    alertBar.style.display = "none";
+                    okBar.style.display = "block"; alertBar.style.display = "none";
                 } else if (json && json.status === 0) {
                     let realMessages = [];
                     if (json.text) { realMessages.push(json.text); }
                     if (json.data && typeof json.data === 'object') {
                         for (let key in json.data) {
-                            let rawData = json.data[key];
-                            if (!rawData) continue;
-                            let mtrRealText = (typeof rawData === 'string') ? rawData : (rawData.text || "");
-                            if (mtrRealText) { realMessages.push(mtrRealText); }
+                            if (json.data[key]) {
+                                let mtrRealText = (typeof json.data[key] === 'string') ? json.data[key] : (json.data[key].text || "");
+                                if (mtrRealText) { realMessages.push(mtrRealText); }
+                            }
                         }
                     }
                     
                     if (realMessages.length > 0) {
                         let fullText = realMessages.join("  |  ");
-                        okBar.style.display = "none"; 
-                        alertBar.style.display = "block";
+                        okBar.style.display = "none"; alertBar.style.display = "block";
                         marquee.innerText = "⚠️ 特別通告： " + fullText + " ";
                         
+                        // 8號颱風變黃色
                         if (fullText.includes("八號") || fullText.includes("8號")) {
-                            alertBar.style.color = "#ff9500";
-                            alertBar.style.borderColor = "#ff9500";
+                            alertBar.style.color = "#ff9500"; alertBar.style.borderColor = "#ff9500";
                             alertBar.style.boxShadow = "inset 0 0 10px rgba(255,149,0,0.5), 0 0 15px rgba(255,149,0,0.3)";
-                            marquee.style.color = "#ff9500";
-                            marquee.style.textShadow = "0 0 8px #ff9500, 0 0 12px #ff6a00";
+                            marquee.style.color = "#ff9500"; marquee.style.textShadow = "0 0 8px #ff9500";
                         } else {
-                            alertBar.style.color = "#ff3b30";
-                            alertBar.style.borderColor = "#ff3b30";
+                            // 白天故障亮紅色
+                            alertBar.style.color = "#ff3b30"; alertBar.style.borderColor = "#ff3b30";
                             alertBar.style.boxShadow = "inset 0 0 10px rgba(255,59,48,0.5), 0 0 15px rgba(255,59,48,0.3)";
-                            marquee.style.color = "#ff3b30";
-                            marquee.style.textShadow = "0 0 8px #ff3b30, 0 0 12px #ff4d4f";
+                            marquee.style.color = "#ff3b30"; marquee.style.textShadow = "0 0 8px #ff3b30";
                         }
-                        return;
                     }
                 }
-                
-                // 100% 安全回歸綠燈
-                okBar.style.display = "block"; 
-                alertBar.style.display = "none";
-                
-            } catch (e) { 
-                console.log("故障看板對接中..."); 
-            }
+            } catch (e) { console.log("故障看板對接中..."); }
         }
 
 
@@ -320,17 +260,21 @@
                 // ==========================================
         // 4. 精確每秒倒數與月台大小排序（15分鐘深夜防禦完全體）
         // ==========================================
+                // ==========================================
+        // 4. 精確每秒倒數與「中央一體化強行同步變黃」智慧面板
+        // ==========================================
         function renderUI() {
             let staSelect = document.getElementById("station-select");
+            let lineSelect = document.getElementById("line-select");
             if (!staSelect || staSelect.selectedIndex === -1 || !staSelect.value) { return; }
             
             let stationName = staSelect.options[staSelect.selectedIndex].text;
+            let L = lineSelect.value;
             document.getElementById("panel-title").innerText = `📊 ${stationName} 站 · 實時月台 PIDS 顯示屏`;
             
             let now = new Date();
             let html = "";
             
-            // 按月台號碼與到站時間從小到大整齊排隊
             trains.sort(function(a, b) {
                 if (a.plat !== b.plat) { return a.plat - b.plat; }
                 return a.time - b.time;
@@ -340,13 +284,11 @@
                 let diff = Math.floor((t.time - now) / 1000);
                 if (diff >= -90) {
                     let timeText = ""; let isArrivingClass = "";
-                    
                     if (diff < 0) {
                         timeText = "列車到站中 ARRIVING"; isArrivingClass = "arriving";
                     } else {
                         timeText = `${Math.floor(diff / 60)}分 ${String(diff % 60).padStart(2, '0')}秒`;
                     }
-                    
                     html += `
                         <div class="train-card">
                             <div>
@@ -359,29 +301,43 @@
                 }
             });
             
-            // 💥 究極防禦核心：檢查第一班最快的車是不是要等 15 分鐘 (900秒) 以上，或者根本沒有車
-                        // 💥 世紀大修正：必須用 trains[0].time 才能精確拿到第一班車的時間！
+            // 💥 智慧核心：判定是不是要等 15 分鐘以上，或者根本沒車
             let showTerminated = false;
             if (trains.length === 0) {
                 showTerminated = true;
-            } else {
+            } else if (trains[0] && trains[0].time) {
                 let diffCheck = Math.floor((trains[0].time - now) / 1000);
-                if (diffCheck >= 900) { 
-                    showTerminated = true; // 超過 15 分鐘，100% 判定為明早頭班車，啟動收車！
-                }
+                if (diffCheck >= 900) { showTerminated = true; } // 超過15分鐘判定為打烊
             }
+            
+            let okBar = document.getElementById("mtr-ok-bar");
+            let alertBar = document.getElementById("mtr-alert-bar");
+            let marquee = document.getElementById("notice-marquee");
+            let lineName = MTR_DATA[L] ? MTR_DATA[L].name : "該路綫";
 
-            // 根據判定，1 毫秒同步切換前台畫面
             if (showTerminated) {
+                // 💥 終極命令：中央看板變黃的同時，直接強行拉閘，命令最上面 100% 同步變黃！
                 document.getElementById("panel-content").innerHTML = `
                     <div class="loading-text" style="color: #ff9500; text-shadow: 0 0 8px #ff9500; font-weight: bold;">
                         非營運時間或暫無班次 TERMINATED
                     </div>
                 `;
+                
+                okBar.style.display = "none"; 
+                alertBar.style.display = "block";
+                
+                alertBar.style.color = "#ff9500";
+                alertBar.style.borderColor = "#ff9500";
+                alertBar.style.boxShadow = "inset 0 0 10px rgba(255,149,0,0.5), 0 0 15px rgba(255,149,0,0.3)";
+                marquee.style.color = "#ff9500";
+                marquee.style.textShadow = "0 0 8px #ff9500, 0 0 12px #ff6a00";
+                marquee.innerText = `⚠️ 【車務通告】${lineName}現已進入非營運時間。 TERMINATED `;
             } else {
+                // 如果有車，正常顯示班次，並把控制權交還給 okBar/alertBar
                 document.getElementById("panel-content").innerHTML = html;
             }
         }
+
 
 
                 function startAppMonitor() {
