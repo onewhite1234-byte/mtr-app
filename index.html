@@ -202,7 +202,7 @@
             let mtrUrl = mtrArr.join("") + "?line=" + L + "&sta=" + S;
             
             // === 這裡請記得換成你在 Cloudflare 得到的專屬私人網址 ===
-            let myCloudflareProxy = "https://workers.dev";
+            let myCloudflareProxy = "https://my-mtr-proxy.onewhite1234.workers.dev";
             let proxyUrl = myCloudflareProxy + encodeURIComponent(mtrUrl);
             
             try {
