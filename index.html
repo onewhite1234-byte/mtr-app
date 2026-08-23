@@ -124,14 +124,15 @@
             panelContent.innerHTML = `<div class="loading-text">路綫已選定，請點擊右側選擇車站...</div>`;
         }
 
-        // ==========================================
+               // ==========================================
         // 3. 實時列車時間獲取通道（特權環境真直連 · 零 Proxy 免代理版）
         // ==========================================
         async function fetchMtrData() {
             let L = document.getElementById("line-select").value;
             let S = document.getElementById("station-select").value;
             
-            // 徹底拋棄 Proxy！直接呼叫政府港鐵大數據，由手機/微信特權環境底層光速直通
+            if (!L || !S) { return; }
+            
             let mtrPart1 = "ht" + "tps://";
             let mtrPart2 = "rt.da" + "ta.g" + "ov.hk/";
             let mtrPart3 = "v1/tra" + "nsport/m" + "tr/getSc" + "hedule.php";
@@ -151,7 +152,7 @@
                     } else {
                         let keys = Object.keys(json.data);
                         for (let i = 0; i < keys.length; i++) {
-                            if (keys[i].toUpperCase().includes(S.toUpperCase())) {
+                            if (keys[i] && keys[i].toUpperCase().includes(S.toUpperCase())) {
                                 data = json.data[keys[i]];
                                 break;
                             }
@@ -181,13 +182,8 @@
             } catch (e) { console.log("列車訊號對接中..."); }
         }
 
-        // 獨立背景功能：故障公告欄（同樣 100% 官方直連，安全不卡死）
-                // === 測試專用：強制觸發「八號風球」模擬跑馬燈版 ===
-               // ==========================================
-        // 🌟 獨立背景功能：真．全港鐵路故障狀態自動監測（恢復官方直連版）
         // ==========================================
-               // ==========================================
-        // 🌟 獨立背景功能：100% 複製港鐵控制室真實手動信息版
+        // 🌟 核心升級：智慧判定「非營運+故障 ➔ 變黃色」極致分流雷達
         // ==========================================
         async function fetchMtrStatusNotice() {
             let statusPart1 = "ht" + "tps://";
@@ -195,69 +191,65 @@
             let statusPart3 = "v1/tra" + "nsport/m" + "tr/getSt" + "atus.php";
             let statusUrl = statusPart1 + statusPart2 + statusPart3;
             
-            let proxyPart1 = "ht" + "tps://";
-            let proxyPart2 = "api.all" + "orig" + "ins.w" + "in/g" + "et?u" + "rl=";
-            let proxyUrl = proxyPart1 + proxyPart2 + encodeURIComponent(statusUrl);
-            
             try {
-                let res = await fetch(proxyUrl);
-                let wrapperJson = await res.json(); 
-                let json = JSON.parse(wrapperJson.contents);
+                let res = await fetch(statusUrl);
+                let json = await res.json();
                 let okBar = document.getElementById("mtr-ok-bar");
                 let alertBar = document.getElementById("mtr-alert-bar");
                 let marquee = document.getElementById("notice-marquee");
                 
-                // json.status 為 1 代表全港綠色正常
+                // 全自動檢查目前時間，是不是已經到了深夜收車打烊時間（凌晨 00:30 到 05:00 之間）
+                let nowTime = new Date();
+                let currentHour = nowTime.getHours();
+                let currentMinute = nowTime.getMinutes();
+                let isLateNightTerminated = (currentHour === 0 && currentMinute >= 30) || (currentHour >= 1 && currentHour < 5);
+
                 if (json && json.status === 1) {
-                    okBar.style.display = "block";
-                    alertBar.style.display = "none";
-                } 
-                // json.status 為 0 代表打風或出事了，港鐵發出了真實手動公告！
-                else if (json && json.status === 0) {
+                    okBar.style.display = "block"; alertBar.style.display = "none";
+                } else if (json && json.status === 0) {
                     let realMessages = [];
-                    
-                    // 核心 A：如果港鐵把手動大通告放在最外層，直接 Copy
-                    if (json.text) {
-                        realMessages.push(json.text);
-                    }
-                    
-                    // 核心 B：如果港鐵按路線一條條打字，我們通通 Copy 並打包拼在一起
+                    if (json.text) { realMessages.push(json.text); }
                     if (json.data && typeof json.data === 'object') {
                         for (let key in json.data) {
                             let rawData = json.data[key];
                             if (!rawData) continue;
-                            
-                            // 獲取港鐵控制室手動打的那串真實中文
                             let mtrRealText = (typeof rawData === 'string') ? rawData : (rawData.text || "");
-                            if (mtrRealText) {
-                                realMessages.push(mtrRealText);
-                            }
+                            if (mtrRealText) { realMessages.push(mtrRealText); }
                         }
                     }
                     
-                    // 核心 C：如果真的抓到了港鐵發出的原話，紅色跑馬燈 100% 複製輸出！
                     if (realMessages.length > 0) {
-                        okBar.style.display = "none";
-                        alertBar.style.display = "block";
+                        let fullText = realMessages.join("  |  ");
+                        okBar.style.display = "none"; alertBar.style.display = "block";
+                        marquee.innerText = "⚠️ 特別通告： " + fullText + " ";
                         
-                        // 把港鐵手動打的所有真原話，用「 | 」連在一起直接滾動顯示
-                        marquee.innerText = "⚠️ 港鐵實時特別通告： " + realMessages.join("  |  ") + " ";
+                        // 【黃字判定】：如果包含 8 號颱風，或者是「深夜非營運時間遇到了故障」，通通渲染成優雅的點陣黃字！
+                        if (fullText.includes("八號") || fullText.includes("8號") || isLateNightTerminated) {
+                            alertBar.style.color = "#ff9500";
+                            alertBar.style.borderColor = "#ff9500";
+                            alertBar.style.boxShadow = "inset 0 0 10px rgba(255,149,0,0.5), 0 0 15px rgba(255,149,0,0.3)";
+                            marquee.style.color = "#ff9500";
+                            marquee.style.textShadow = "0 0 8px #ff9500, 0 0 12px #ff6a00";
+                        } else {
+                            // 只有白天的突發事故或9/10號風球，才引爆紅色危險警戒！
+                            alertBar.style.color = "#ff3b30";
+                            alertBar.style.borderColor = "#ff3b30";
+                            alertBar.style.boxShadow = "inset 0 0 10px rgba(255,59,48,0.5), 0 0 15px rgba(255,59,48,0.3)";
+                            marquee.style.color = "#ff3b30";
+                            marquee.style.textShadow = "0 0 8px #ff3b30, 0 0 12px #ff4d4f";
+                        }
                         return;
                     }
                 }
-            } catch (e) { 
-                console.log("故障看板對接中..."); 
-            }
+            } catch (e) { console.log("故障看板對接中..."); }
         }
-
-
 
         // ==========================================
         // 4. 精確每秒倒數與月台大小排序
         // ==========================================
         function renderUI() {
             let staSelect = document.getElementById("station-select");
-            if (!staSelect || staSelect.selectedIndex === -1) { return; }
+            if (!staSelect || staSelect.selectedIndex === -1 || !staSelect.value) { return; }
             
             let stationName = staSelect.options[staSelect.selectedIndex].text;
             document.getElementById("panel-title").innerText = `📊 ${stationName} 站 · 實時月台 PIDS 顯示屏`;
@@ -273,15 +265,12 @@
             trains.forEach(function(t) {
                 let diff = Math.floor((t.time - now) / 1000);
                 if (diff >= -90) {
-                    let timeText = "";
-                    let isArrivingClass = "";
-                    
+                    let timeText = ""; let isArrivingClass = "";
                     if (diff < 0) {
                         timeText = "列車到站中 ARRIVING"; isArrivingClass = "arriving";
                     } else {
                         timeText = `${Math.floor(diff / 60)}分 ${String(diff % 60).padStart(2, '0')}秒`;
                     }
-                    
                     html += `
                         <div class="train-card">
                             <div>
@@ -293,20 +282,30 @@
                     `;
                 }
             });
-            document.getElementById("panel-content").innerHTML = html || `<div class="loading-text">非營運時間或暫無班次</div>`;
+            
+            // 深夜收車非營運時間點陣黃字
+            document.getElementById("panel-content").innerHTML = html || `
+                <div class="loading-text" style="color: #ff9500; text-shadow: 0 0 8px #ff9500; font-weight: bold;">
+                    非營運時間或暫無班次 TERMINATED
+                </div>
+            `;
         }
 
         function startAppMonitor() {
+            let S = document.getElementById("station-select").value;
+            if (!S) { return; } 
+            
             document.getElementById("panel-content").innerHTML = `<div class="loading-text">正在讀取港鐵月台衞星數據...</div>`;
             if (apiInterval) { clearInterval(apiInterval); }
             if (uiInterval) { clearInterval(uiInterval); }
             
-            fetchMtrData().then(function() {
-                uiInterval = setInterval(renderUI, 1000);
+            fetchMtrData().then(function() { 
+                uiInterval = setInterval(renderUI, 1000); 
             });
             apiInterval = setInterval(fetchMtrData, 30000);
         }
 
+        // 開網頁直接啟動
         initApp();
         setTimeout(fetchMtrStatusNotice, 1000);
         setInterval(fetchMtrStatusNotice, 60000);
