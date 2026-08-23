@@ -189,7 +189,10 @@
         // ==========================================
         // 🌟 智慧判定：只要畫面出現 TERMINATED，跑馬燈 100% 同步變黃！
         // ==========================================
-                  async function fetchMtrStatusNotice() {
+                  // ==========================================
+        // 🌟 獨立背景功能：真．100% 中央同步與全故障防禦雷達
+        // ==========================================
+        async function fetchMtrStatusNotice() {
             let L = document.getElementById("line-select").value;
             
             let statusPart1 = "ht" + "tps://";
@@ -204,31 +207,34 @@
                 let alertBar = document.getElementById("mtr-alert-bar");
                 let marquee = document.getElementById("notice-marquee");
                 
-                // 💥 降魔修正核心：精準數時間！
-                // 檢查第一班車是不是要等 15 分鐘 (900秒) 以上，或者根本沒有車
-                let isCurrentLineTerminated = true;
-                if (trains.length > 0) {
-                    let now = new Date();
-                    let nextTrainTime = trains[0].time; // 拿到最快來的那班車時間
-                    let diffInSeconds = Math.floor((nextTrainTime - now) / 1000);
-                    
-                    // 如果最近的一班車在 15 分鐘以內會到，才算正在營運！
-                    if (diffInSeconds >= 0 && diffInSeconds < 900) {
-                        isCurrentLineTerminated = false;
+                // 💥 究極防禦核心：直接去數 trains 陣列！
+                // 檢查第一班最快的車是不是要等 15 分鐘 (900秒) 以上，或者根本沒有車
+                let isCurrentLineTerminated = false;
+                if (trains.length === 0) {
+                    isCurrentLineTerminated = true;
+                } else {
+                    let nowCheck = new Date();
+                    let diffCheck = Math.floor((trains[0].time - nowCheck) / 1000);
+                    if (diffCheck >= 900) { 
+                        isCurrentLineTerminated = true; // 超過15分鐘，判定為深夜收車
                     }
                 }
 
                 let lineName = MTR_DATA[L] ? MTR_DATA[L].name : "該路綫";
 
+                // 💥 第一優先權：只要目前路線沒車了，最頂層跑馬燈無條件一秒強制變黃色！不准亮綠燈！
                 if (isCurrentLineTerminated) {
-                    okBar.style.display = "none"; alertBar.style.display = "block";
+                    okBar.style.display = "none"; 
+                    alertBar.style.display = "block";
                     
+                    // 100% 渲染成你指定的精美點陣橘黃色霓虹燈特效
                     alertBar.style.color = "#ff9500";
                     alertBar.style.borderColor = "#ff9500";
                     alertBar.style.boxShadow = "inset 0 0 10px rgba(255,149,0,0.5), 0 0 15px rgba(255,149,0,0.3)";
                     marquee.style.color = "#ff9500";
                     marquee.style.textShadow = "0 0 8px #ff9500, 0 0 12px #ff6a00";
                     
+                    // 深夜加料通告：看看此時官方有沒有發布額外的工程故障文字
                     let extraMsg = "";
                     if (json && json.status === 0) {
                         let errs = [];
@@ -247,11 +253,13 @@
                     }
                     
                     marquee.innerText = `⚠️ 【車務通告】${lineName}現已進入非營運時間。 TERMINATED${extraMsg} `;
-                    return;
+                    return; // 變黃成功，直接攔截返回！
                 }
 
+                // 第二優先權：如果還有車在跑，才允許走平時的常規正常/壞車判定
                 if (json && json.status === 1) {
-                    okBar.style.display = "block"; alertBar.style.display = "none";
+                    okBar.style.display = "block"; 
+                    alertBar.style.display = "none";
                 } else if (json && json.status === 0) {
                     let realMessages = [];
                     if (json.text) { realMessages.push(json.text); }
@@ -266,7 +274,8 @@
                     
                     if (realMessages.length > 0) {
                         let fullText = realMessages.join("  |  ");
-                        okBar.style.display = "none"; alertBar.style.display = "block";
+                        okBar.style.display = "none"; 
+                        alertBar.style.display = "block";
                         marquee.innerText = "⚠️ 特別通告： " + fullText + " ";
                         
                         if (fullText.includes("八號") || fullText.includes("8號")) {
@@ -285,9 +294,16 @@
                         return;
                     }
                 }
-                okBar.style.display = "block"; alertBar.style.display = "none";
-            } catch (e) { console.log("故障看板對接中..."); }
+                
+                // 安全回歸
+                okBar.style.display = "block"; 
+                alertBar.style.display = "none";
+                
+            } catch (e) { 
+                console.log("故障看板對接中..."); 
+            }
         }
+
         // ==========================================
         // 4. 精確每秒倒數與月台大小排序
         // ==========================================
