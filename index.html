@@ -135,18 +135,16 @@
             staSelect.innerHTML = html;
             startAppMonitor();
         }
-                // ==========================================
-        // 3. 實時列車時間獲取通道
+               // ==========================================
+        // 3. 實時列車時間獲取通道（完美大括號修正版）
         // ==========================================
         async function fetchMtrData() {
             let L = document.getElementById("line-select").value;
             let S = document.getElementById("station-select").value;
             
-            // 港鐵 API 網址矩陣拼接（防封鎖）
             let mtrArr = ["h","t","t","p","s",":","/","/","r","t",".","d","a","t","a",".","g","o","v",".","h","k","/","v","1","/","t","r","a","n","s","p","o","r","t","/","m","t","r","/","g","e","t","S","c","h","e","d","u","l","e",".","p","h","p"];
             let mtrUrl = mtrArr.join("") + "?line=" + L + "&sta=" + S;
             
-            // 全球公用解鎖通道網址矩陣拼接
             let proxyArr = ["h","t","t","p","s",":","/","/","c","o","r","s","p","r","o","x","y",".","i","o","/","?","u","r","l","="];
             let proxyUrl = proxyArr.join("") + encodeURIComponent(mtrUrl);
             
@@ -159,21 +157,23 @@
                     let data = null;
                     let targetKey = (L + "-" + S).toUpperCase();
                     
-                    // 智慧相容終點站
                     if (json.data[targetKey]) {
                         data = json.data[targetKey];
                     } else {
                         let keys = Object.keys(json.data);
-                        if (keys.length > 0) data = json.data[keys];
+                        if (keys.length > 0) {
+                            data = json.data[keys[0]]; // 修正：精準抓取第一個有效抽屜
+                        }
                     }
                     
                     if (data) {
-                        ['UP', 'DOWN'].forEach(dir => {
-                            if (data[dir]) {
-                                data[dir].forEach(t => {
+                        let directions = ['UP', 'DOWN'];
+                        directions.forEach(function(dir) {
+                            if (data[dir] && Array.isArray(data[dir])) {
+                                data[dir].forEach(function(t) {
                                     let destName = GLOBAL_DEST[t.dest] || t.dest;
                                     
-                                    // 完美修正香港時區大 Bug：強制鎖定 +08:00，全面解放被隱藏的密集班次！
+                                    // 100% 鎖定香港時區，解放所有被隱藏的班次
                                     let formattedTimeStr = t.time.replace(" ", "T") + "+08:00";
                                     
                                     trains.push({ 
@@ -186,14 +186,19 @@
                         });
                     }
                 }
-            } catch (e) { console.log("列車訊號對接中..."); }
+            } catch (e) { 
+                console.log("列車訊號對接中..."); 
+            }
         }
-        // ==========================================
+
+                // ==========================================
         // 4. 精確每秒倒數與月台大小排序
         // ==========================================
         function renderUI() {
             let staSelect = document.getElementById("station-select");
-            if (!staSelect || staSelect.selectedIndex === -1) return;
+            if (!staSelect || staSelect.selectedIndex === -1) {
+                return;
+            }
             
             let stationName = staSelect.options[staSelect.selectedIndex].text;
             document.getElementById("panel-title").innerText = `📊 ${stationName} 站 · 即時到站看板`;
@@ -201,16 +206,18 @@
             let now = new Date();
             let html = "";
             
-            // 按月台號碼從小到大排（1號 -> 2號），若月台相同再按時間先後排
-            trains.sort((a, b) => {
-                if (a.plat !== b.plat) return a.plat - b.plat; 
+            // 雙重排序：優先按月台從小到大排（1號 -> 2號）；若月台相同，再按時間先後排
+            trains.sort(function(a, b) {
+                if (a.plat !== b.plat) {
+                    return a.plat - b.plat; 
+                }
                 return a.time - b.time;
             });
             
-            trains.forEach(t => {
+            trains.forEach(function(t) {
                 let diff = Math.floor((t.time - now) / 1000);
                 if (diff >= -90) {
-                    let timeText = diff >= 0 ? `${Math.floor(diff/60)}分 ${String(diff%60).padStart(2,'0')}秒` : "列車到站中";
+                    let timeText = diff >= 0 ? `${Math.floor(diff / 60)}分 ${String(diff % 60).padStart(2, '0')}秒` : "列車到站中";
                     html += `
                         <div class="train-card">
                             <div>
@@ -227,14 +234,16 @@
 
         function startAppMonitor() {
             document.getElementById("panel-content").innerHTML = `<div class="loading-text">正在連接港鐵衛星訊號...</div>`;
-            clearInterval(apiInterval); clearInterval(uiInterval);
-            fetchMtrData().then(() => {
+            if (apiInterval) { clearInterval(apiInterval); }
+            if (uiInterval) { clearInterval(uiInterval); }
+            
+            fetchMtrData().then(function() {
                 uiInterval = setInterval(renderUI, 1000);
             });
             apiInterval = setInterval(fetchMtrData, 30000);
         }
 
-        // 強制啟動開關（一開網頁立刻解凍並執行）
+        // 核心啟動開關（無須等待，網頁載入立刻強制解凍選單）
         initApp();
 
     </script>
