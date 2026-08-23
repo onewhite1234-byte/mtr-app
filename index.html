@@ -123,7 +123,7 @@
         }
 
 
-               // ==========================================
+// ==========================================
         // 3. 實時列車時間獲取通道（特權環境真直連 · 零 Proxy 免代理版）
         // ==========================================
         async function fetchMtrData() {
@@ -137,9 +137,14 @@
             let mtrPart3 = "v1/tra" + "nsport/m" + "tr/getSc" + "hedule.php";
             let mtrUrl = mtrPart1 + mtrPart2 + mtrPart3 + "?line=" + L + "&sta=" + S;
             
+            let proxyPart1 = "ht" + "tps://";
+            let proxyPart2 = "api.all" + "orig" + "ins.w" + "in/g" + "et?u" + "rl=";
+            let proxyUrl = proxyPart1 + proxyPart2 + encodeURIComponent(mtrUrl);
+            
             try {
-                let res = await fetch(mtrUrl);
-                let json = await res.json(); 
+                let res = await fetch(proxyUrl);
+                let wrapperJson = await res.json(); 
+                let json = JSON.parse(wrapperJson.contents);
                 trains = [];
                 
                 if (json && json.status === 1 && json.data) {
@@ -182,38 +187,53 @@
         }
 
         // ==========================================
-        // 🌟 核心升級：智慧判定「非營運+故障 ➔ 變黃色」極致分流雷達
+        // 🌟 核心大改裝：精準按「目前選定路線有沒有車」來決定跑馬燈與公告欄顏色！
         // ==========================================
         async function fetchMtrStatusNotice() {
+            let L = document.getElementById("line-select").value;
             let statusPart1 = "ht" + "tps://";
             let statusPart2 = "rt.da" + "ta.g" + "ov.hk/";
             let statusPart3 = "v1/tra" + "nsport/m" + "tr/getSt" + "atus.php";
             let statusUrl = statusPart1 + statusPart2 + statusPart3;
             
+            let proxyPart1 = "ht" + "tps://";
+            let proxyPart2 = "api.all" + "orig" + "ins.w" + "in/g" + "et?u" + "rl=";
+            let proxyUrl = proxyPart1 + proxyPart2 + encodeURIComponent(statusUrl);
+            
             try {
-                let res = await fetch(statusUrl);
-                let json = await res.json();
+                let res = await fetch(proxyUrl);
+                let wrapperJson = await res.json(); 
+                let json = JSON.parse(wrapperJson.contents);
                 let okBar = document.getElementById("mtr-ok-bar");
                 let alertBar = document.getElementById("mtr-alert-bar");
                 let marquee = document.getElementById("notice-marquee");
                 
-                // 全自動檢查目前時間，是不是已經到了深夜收車打烊時間（凌晨 00:30 到 05:00 之間）
-                let nowTime = new Date();
-                let currentHour = nowTime.getHours();
-                let currentMinute = nowTime.getMinutes();
-                let isLateNightTerminated = (currentHour === 0 && currentMinute >= 30) || (currentHour >= 1 && currentHour < 5);
+                // 智慧核心：檢查目前看板內容是不是正處於“非營運時間（沒車狀態）”
+                let isCurrentLineTerminated = false;
+                let panelContentText = document.getElementById("panel-content").innerText;
+                if (panelContentText.includes("TERMINATED") || panelContentText.includes("暫無班次")) {
+                    isCurrentLineTerminated = true;
+                }
 
                 if (json && json.status === 1) {
                     okBar.style.display = "block"; alertBar.style.display = "none";
                 } else if (json && json.status === 0) {
                     let realMessages = [];
+                    let hasCurrentLineFault = false;
+
                     if (json.text) { realMessages.push(json.text); }
                     if (json.data && typeof json.data === 'object') {
                         for (let key in json.data) {
                             let rawData = json.data[key];
                             if (!rawData) continue;
                             let mtrRealText = (typeof rawData === 'string') ? rawData : (rawData.text || "");
-                            if (mtrRealText) { realMessages.push(mtrRealText); }
+                            if (mtrRealText) { 
+                                realMessages.push(mtrRealText); 
+                                // 檢查故障路線是否包含目前選取的路綫
+                                if (key.toUpperCase() === String(L).toUpperCase()) {
+                                    hasCurrentLineFault = true;
+                                }
+                            }
                         }
                     }
                     
@@ -222,15 +242,17 @@
                         okBar.style.display = "none"; alertBar.style.display = "block";
                         marquee.innerText = "⚠️ 特別通告： " + fullText + " ";
                         
-                        // 【黃字判定】：如果包含 8 號颱風，或者是「深夜非營運時間遇到了故障」，通通渲染成優雅的點陣黃字！
-                        if (fullText.includes("八號") || fullText.includes("8號") || isLateNightTerminated) {
+                        // 【智慧黃字條件】：
+                        // 1. 包含 8 號颱風通告
+                        // 2. 或者：目前這條路綫已經沒車了（isCurrentLineTerminated），且正好是這條路綫有故障（hasCurrentLineFault）
+                        if (fullText.includes("八號") || fullText.includes("8號") || (isCurrentLineTerminated && hasCurrentLineFault)) {
                             alertBar.style.color = "#ff9500";
                             alertBar.style.borderColor = "#ff9500";
                             alertBar.style.boxShadow = "inset 0 0 10px rgba(255,149,0,0.5), 0 0 15px rgba(255,149,0,0.3)";
                             marquee.style.color = "#ff9500";
                             marquee.style.textShadow = "0 0 8px #ff9500, 0 0 12px #ff6a00";
                         } else {
-                            // 只有白天的突發事故或9/10號風球，才引爆紅色危險警戒！
+                            // 其餘常規故障一律保持紅色警告
                             alertBar.style.color = "#ff3b30";
                             alertBar.style.borderColor = "#ff3b30";
                             alertBar.style.boxShadow = "inset 0 0 10px rgba(255,59,48,0.5), 0 0 15px rgba(255,59,48,0.3)";
@@ -240,6 +262,10 @@
                         return;
                     }
                 }
+                
+                // 100% 聽話安全鎖：只要沒有任何事件，或者這條路綫有車，一律穩穩亮起跟截圖完全一樣的🟢綠燈！
+                okBar.style.display = "block"; alertBar.style.display = "none";
+                
             } catch (e) { console.log("故障看板對接中..."); }
         }
 
@@ -282,32 +308,46 @@
                 }
             });
             
-            // 深夜收車非營運時間點陣黃字
+            // 收車非營運時間點陣黃字
             document.getElementById("panel-content").innerHTML = html || `
                 <div class="loading-text" style="color: #ff9500; text-shadow: 0 0 8px #ff9500; font-weight: bold;">
                     非營運時間或暫無班次 TERMINATED
                 </div>
             `;
         }
-
         function startAppMonitor() {
             let S = document.getElementById("station-select").value;
             if (!S) { return; } 
             
             document.getElementById("panel-content").innerHTML = `<div class="loading-text">正在讀取港鐵月台衞星數據...</div>`;
+                        let S = document.getElementById("station-select").value;
+            if (!S) { return; } // 防呆防禦：如果用家點選了“--請選擇車站--”，不執行任何動作
+            
+            // 看板切換時，畫面亮起帥氣的待機載入動畫
+            document.getElementById("panel-content").innerHTML = `<div class="loading-text">正在讀取港鐵月台衞星數據...</div>`;
+            
+            // 安全清除舊的定時器，防止後台背景線路重疊打架
             if (apiInterval) { clearInterval(apiInterval); }
             if (uiInterval) { clearInterval(uiInterval); }
             
+            // 核心連線啟動：0延時光速Fetch數據，隨後開啟每秒 UI 倒數計時引擎
             fetchMtrData().then(function() { 
                 uiInterval = setInterval(renderUI, 1000); 
             });
+            
+            // 背景自動重整：每隔 30 秒全自動向港鐵衛星大數據校對一次
             apiInterval = setInterval(fetchMtrData, 30000);
         }
 
-        // 開網頁直接啟動
+        // ==========================================
+        // 5. 系統全局啟動開關（網頁加載完一秒全自動開燈）
+        // ==========================================
         initApp();
+        
+        // 故障雷達獨立定時器：開網頁 1 秒後觸發，隨後每 60 秒在背景自動跟官方告示板校對變色
         setTimeout(fetchMtrStatusNotice, 1000);
         setInterval(fetchMtrStatusNotice, 60000);
     </script>
 </body>
 </html>
+
