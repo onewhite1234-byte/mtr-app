@@ -43,7 +43,7 @@
 
     <div class="app-header">🚇 MTR 月台實時電子看板</div>
     
-    <div id="mtr-ok-bar" class="status-ok">🟢 全線車務運作正常 </div>
+    <div id="mtr-ok-bar" class="status-ok">🟢 全線車務運作正常</div>
     
     <div id="mtr-alert-bar" class="status-notice">
         <span id="notice-marquee" class="marquee-box">⚠️ 正在對接全港鐵路衞星訊號...</span>
@@ -197,7 +197,24 @@
                 let marquee = document.getElementById("notice-marquee");
                 
                 if (json && json.status === 1) {
-                    okBar.style.display = "block"; alertBar.style.display = "none";
+                    okBar.style.display = "block";
+                    alertBar.style.display = "none";
+                    // ===== 新增：恢复绿色或黄色（根据列车数据） =====
+                    let lineSelect = document.getElementById("line-select");
+                    let lineName = lineSelect.options[lineSelect.selectedIndex]?.text || "本線路";
+                    if (trains.length === 0) {
+                        okBar.style.backgroundColor = "#ff9500";
+                        okBar.style.color = "#000";
+                        okBar.style.borderColor = "#ff9500";
+                        okBar.style.boxShadow = "inset 0 0 10px rgba(255,149,0,0.5), 0 0 15px rgba(255,149,0,0.3)";
+                        okBar.innerText = `⚠️ ${lineName} 已經進入非運營時間`;
+                    } else {
+                        okBar.style.backgroundColor = "";
+                        okBar.style.color = "";
+                        okBar.style.borderColor = "";
+                        okBar.style.boxShadow = "";
+                        okBar.innerText = "✅ 全線車務運作正常";
+                    }
                 } else if (json && json.status === 0) {
                     let realMessages = [];
                     if (json.text) { realMessages.push(json.text); }
@@ -281,6 +298,29 @@
                     非營運時間或暫無班次 TERMINATED
                 </div>
             `;
+
+            // ============================================================
+            //  ✨ 控制顶部绿色状态条（非营运时变黄 + 显示线路名）
+            // ============================================================
+            let okBar = document.getElementById("mtr-ok-bar");
+            let alertBar = document.getElementById("mtr-alert-bar");
+            if (okBar.style.display !== "none" && alertBar.style.display === "none") {
+                let lineSelect = document.getElementById("line-select");
+                let lineName = lineSelect.options[lineSelect.selectedIndex]?.text || "本線路";
+                if (trains.length === 0) {
+                    okBar.style.backgroundColor = "#ff9500";
+                    okBar.style.color = "#000";
+                    okBar.style.borderColor = "#ff9500";
+                    okBar.style.boxShadow = "inset 0 0 10px rgba(255,149,0,0.5), 0 0 15px rgba(255,149,0,0.3)";
+                    okBar.innerText = `⚠️ ${lineName} 已經進入非運營時間`;
+                } else {
+                    okBar.style.backgroundColor = "";
+                    okBar.style.color = "";
+                    okBar.style.borderColor = "";
+                    okBar.style.boxShadow = "";
+                    okBar.innerText = "✅ 全線車務運作正常";
+                }
+            }
         }
 
         function startAppMonitor() {
