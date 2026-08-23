@@ -175,3 +175,53 @@
                 }
             } catch (e) { console.log("列車訊號對接中..."); }
         }
+        // 4. 精確每秒倒數排版與雙重排序
+        function renderUI() {
+            let staSelect = document.getElementById("station-select");
+            if (!staSelect || staSelect.selectedIndex === -1) return;
+            
+            let stationName = staSelect.options[staSelect.selectedIndex].text;
+            document.getElementById("panel-title").innerText = `📊 ${stationName} 站 · 即時到站看板`;
+            
+            let now = new Date();
+            let html = "";
+            
+            // 優先按月台從小到大排（1月台 -> 2月台）；若月台相同，再按時間先後排
+            trains.sort((a, b) => {
+                if (a.plat !== b.plat) return a.plat - b.plat; 
+                return a.time - b.time;
+            });
+            
+            trains.forEach(t => {
+                let diff = Math.floor((t.time - now) / 1000);
+                if (diff >= -90) {
+                    let timeText = diff >= 0 ? `${Math.floor(diff/60)}分 ${String(diff%60).padStart(2,'0')}秒` : "列車到站中";
+                    html += `
+                        <div class="train-card">
+                            <div>
+                                <div class="direction">往 ${t.dest}</div>
+                                <div class="platform">${t.plat} 號月台</div>
+                            </div>
+                            <div class="countdown" style="color: ${diff < 0 ? '#52c41a' : '#ff9500'}">${timeText}</div>
+                        </div>
+                    `;
+                }
+            });
+            document.getElementById("panel-content").innerHTML = html || `<div class="loading-text">非營運時間或暫無班次</div>`;
+        }
+
+        function startAppMonitor() {
+            document.getElementById("panel-content").innerHTML = `<div class="loading-text">正在連接港鐵衛星訊號...</div>`;
+            clearInterval(apiInterval); clearInterval(uiInterval);
+            fetchMtrData().then(() => {
+                uiInterval = setInterval(renderUI, 1000);
+            });
+            apiInterval = setInterval(fetchMtrData, 30000);
+        }
+
+        // 核心啟動開關：網頁載入立刻強制啟動選單與故障檢查
+        initApp();
+
+    </script>
+</body>
+</html>
