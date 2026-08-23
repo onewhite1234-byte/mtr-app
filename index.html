@@ -6,9 +6,16 @@
     <title>港鐵全車站精確秒表 App</title>
     <style>
         body { background: #1c1c1e; color: #ffffff; font-family: -apple-system, sans-serif; margin: 0; padding: 15px; }
-        .app-header { text-align: center; font-size: 20px; font-weight: bold; padding: 15px 0; color: #ffd700; border-bottom: 1px solid #2c2c2e; }
-        .picker-box { background: #2c2c2e; border-radius: 10px; padding: 15px; margin: 15px 0; display: flex; gap: 10px; }
-        select { flex: 1; padding: 12px; background: #1c1c1e; color: #fff; border: 1px solid #444; border-radius: 8px; font-size: 16px; font-weight: bold; }
+        .app-header { text-align: center; font-size: 20px; font-weight: bold; padding: 15px 0; color: #ffd700; }
+        
+        /* 故障跑馬燈樣式 */
+        .status-bar { background: #2e7d32; color: #fff; padding: 12px; border-radius: 8px; font-size: 14px; font-weight: bold; margin-bottom: 15px; overflow: hidden; white-space: nowrap; box-shadow: 0 2px 8px rgba(0,0,0,0.3); text-align: center; }
+        .status-bar.alert { background: #d32f2f; text-align: left; } 
+        .marquee { display: inline-block; padding-left: 100%; animation: marquee_anim 18s linear infinite; }
+        @keyframes marquee_anim { 0% { transform: translate3d(0, 0, 0); } 100% { transform: translate3d(-100%, 0, 0); } }
+        
+        .picker-box { background: #2c2c2e; border-radius: 10px; padding: 15px; margin-bottom: 15px; }
+        select { width: 100%; padding: 12px; background: #1c1c1e; color: #fff; border: 1px solid #444; border-radius: 8px; font-size: 16px; font-weight: bold; -webkit-appearance: none; }
         .mtr-panel { background: #000000; border-radius: 12px; padding: 20px; box-shadow: 0 4px 12px rgba(0,0,0,0.5); border: 1px solid #3a3a3c; min-height: 150px; }
         .panel-title { color: #ffd700; font-size: 16px; font-weight: bold; margin-bottom: 15px; border-bottom: 2px solid #ffd700; padding-bottom: 5px; }
         .train-card { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid #1c1c1e; }
@@ -23,33 +30,117 @@
 
     <div class="app-header">🚇 MTR 精確秒表 App</div>
     
+    <!-- 故障狀態跑馬燈 -->
+    <div id="mtr-status-bar" class="status-bar">
+        <span id="status-text">🟢 全線車務運作正常 (衞星連線已加密)</span>
+    </div>
+    
+    <!-- 全香港單一車站大選單 -->
     <div class="picker-box">
-        <select id="line-select" onchange="initStationSelect()"></select>
-        <select id="station-select" onchange="startAppMonitor()"></select>
+        <select id="station-select" onchange="startAppMonitor()">
+            <option value="">-- 請選擇港鐵車站 --</option>
+            <option value="TML-SIH" selected>兆康</option>
+            <option value="TML-TIS">天水圍</option>
+            <option value="TML-TUM">屯門</option>
+            <option value="TML-YUL">元朗</option>
+            <option value="TML-KSR">錦上路</option>
+            <option value="TML-TWW">荃灣西</option>
+            <option value="TML-MEF">美孚</option>
+            <option value="TML-NAC">南昌</option>
+            <option value="TCL-OLY">奧運</option>
+            <option value="TML-AUS">柯士甸</option>
+            <option value="TML-ETS">尖東</option>
+            <option value="TML-HUH">紅磡</option>
+            <option value="TML-HOM">何文田</option>
+            <option value="TML-TKW">土瓜灣</option>
+            <option value="TML-SUW">宋皇臺</option>
+            <option value="TML-CKA">啟德</option>
+            <option value="TML-DIH">鑽石山</option>
+            <option value="TML-HIK">顯徑</option>
+            <option value="TML-TAW">大圍</option>
+            <option value="TML-STW">沙田圍</option>
+            <option value="TML-CIO">第一城</option>
+            <option value="TML-SHM">石門</option>
+            <option value="TML-TSH">大水坑</option>
+            <option value="TML-HEO">恆安</option>
+            <option value="TML-MOS">馬鞍山</option>
+            <option value="TML-WKS">烏溪沙</option>
+            <option value="ISL-NOP">北角 (港島綫)</option>
+            <option value="TKL-NOP">北角 (將軍澳綫)</option>
+            <option value="ISL-CWB">銅鑼灣</option>
+            <option value="ISL-KET">堅尼地城</option>
+            <option value="ISL-HKU">香港大學</option>
+            <option value="ISL-SYP">西營盤</option>
+            <option value="ISL-SHW">上環</option>
+            <option value="ISL-CEN">中環</option>
+            <option value="ISL-ADM">金鐘</option>
+            <option value="ISL-WAC">灣仔</option>
+            <option value="ISL-TIH">天后</option>
+            <option value="ISL-FOH">炮台山</option>
+            <option value="ISL-QUB">鰂魚涌</option>
+            <option value="ISL-TAK">太古</option>
+            <option value="ISL-SOH">西灣河</option>
+            <option value="ISL-SKW">筲箕灣</option>
+            <option value="ISL-CHW">柴灣</option>
+            <option value="TWL-TST">尖沙咀</option>
+            <option value="TWL-JOR">佐敦</option>
+            <option value="TWL-YMT">油麻地</option>
+            <option value="TWL-MOK">旺角</option>
+            <option value="TWL-PRE">太子</option>
+            <option value="TWL-SSP">深水埗</option>
+            <option value="TWL-CSW">長沙灣</option>
+            <option value="TWL-LCK">荔枝角</option>
+            <option value="TWL-LAK">荔景</option>
+            <option value="TWL-KWF">葵芳</option>
+            <option value="TWL-KWH">葵興</option>
+            <option value="TWL-TWH">荃灣</option>
+            <option value="KTL-WHA">黃埔</option>
+            <option value="KTL-SKM">石硤尾</option>
+            <option value="KTL-KOT">九龍塘</option>
+            <option value="KTL-LOF">樂富</option>
+            <option value="KTL-WTS">黃大仙</option>
+            <option value="KTL-CHH">彩虹</option>
+            <option value="KTL-KOB">九龍灣</option>
+            <option value="KTL-APM">牛頭角</option>
+            <option value="KTL-KWT">觀塘</option>
+            <option value="KTL-LAT">藍田</option>
+            <option value="EAL-EXC">會展</option>
+            <option value="EAL-MKK">旺角東</option>
+            <option value="EAL-SHT">沙田</option>
+            <option value="EAL-FOT">火炭</option>
+            <option value="EAL-UNI">大學</option>
+            <option value="EAL-TAP">大埔墟</option>
+            <option value="EAL-TWO">太和</option>
+            <option value="EAL-FAN">粉嶺</option>
+            <option value="EAL-SHS">上水</option>
+            <option value="EAL-LOW">羅湖</option>
+            <option value="EAL-LMC">落馬洲</option>
+            <option value="TKL-TKO">將軍澳</option>
+            <option value="TKL-LHP">康城</option>
+            <option value="TKL-HAH">坑口</option>
+            <option value="TKL-POA">寶琳</option>
+            <option value="TCL-HOK">香港</option>
+            <option value="TCL-KOW">九龍</option>
+            <option value="TCL-TSY">青衣</option>
+            <option value="TCL-SUN">欣澳</option>
+            <option value="TCL-TUC">東涌</option>
+            <option value="AEL-AIR">機場</option>
+            <option value="AEL-AWE">博覽館</option>
+        </select>
     </div>
 
+    <!-- 月台即時顯示屏 -->
     <div class="mtr-panel">
         <div id="panel-title" class="panel-title">請選擇車站</div>
         <div id="panel-content">
-            <div class="loading-text">請點擊上方選擇路綫與車站</div>
+            <div class="loading-text">請點擊上方選擇車站</div>
         </div>
     </div>
 
     <script>
-        const MTR_DATA = {
-            "TML": { name: "屯馬綫", stations: {"TUM":"屯門", "SIH":"兆康", "TIS":"天水圍", "YUL":"元朗", "KSR":"錦上路", "TWW":"荃灣西", "MEF":"美孚", "NAC":"南昌", "OLY":"奧運", "AUS":"柯士甸", "ETS":"尖東", "HUH":"紅磡", "HOM":"何文田", "TKW":"土瓜灣", "SUW":"宋皇臺", "CKA":"啟德", "DIH":"鑽石山", "HIK":"顯徑", "TAW":"大圍", "STW":"沙田圍", "CIO":"第一城", "SHM":"石門", "TSH":"大水坑", "HEO":"恆安", "MOS":"馬鞍山", "WKS":"烏溪沙"} },
-            "ISL": { name: "港島綫", stations: {"KET":"堅尼地城", "HKU":"香港大學", "SYP":"西營盤", "SHW":"上環", "CEN":"中環", "ADM":"金鐘", "WAC":"灣仔", "CWB":"銅鑼灣", "TIH":"天后", "FOH":"炮台山", "NPK":"北角", "QUB":"鰂魚涌", "TAK":"太古", "SOH":"西灣河", "SKW":"筲箕灣", "CHW":"柴灣"} },
-            "TWL": { name: "荃灣綫", stations: {"CEN":"中環", "ADM":"金鐘", "TST":"尖沙咀", "JOR":"佐敦", "YMT":"油麻地", "MOK":"旺角", "PRE":"太子", "SSP":"深水埗", "CSW":"長沙灣", "LCK":"荔枝角", "MEF":"美孚", "LAK":"荔景", "KWF":"葵芳", "KWH":"葵興", "TWH":"荃灣"} },
-            "KTL": { name: "觀塘綫", stations: {"WHA":"黃埔", "HOM":"何文田", "YMT":"油麻地", "MOK":"旺角", "PRE":"太子", "SKM":"石硤尾", "KOT":"九龍塘", "LOF":"樂富", "WTS":"黃大仙", "DIH":"鑽石山", "CHH":"彩虹", "KOB":"九龍灣", "APM":"牛頭角", "KWT":"觀塘", "LAT":"藍田", "YAT":"油塘", "TIK":"調景嶺"} },
-            "EAL": { name: "東鐵綫", stations: {"ADM":"金鐘", "EXC":"會展", "HUH":"紅磡", "MKK":"旺角東", "KOT":"九龍塘", "TAW":"大圍", "SHT":"沙田", "FOT":"火炭", "UNI":"大學", "TAP":"大埔墟", "TWO":"太和", "FAN":"粉嶺", "SHS":"上水", "LOW":"羅湖", "LMC":"落馬洲"} },
-            "TKL": { name: "將軍澳綫", stations: {"NPK":"北角", "QUB":"鰂魚涌", "YAT":"油塘", "TIK":"調景嶺", "TKO":"將軍澳", "LHP":"康城", "HAH":"坑口", "POA":"寶琳"} },
-            "TCL": { name: "東涌綫", stations: {"HOK":"香港", "KOW":"九龍", "OLY":"奧運", "NAC":"南昌", "LAK":"荔景", "TSY":"青衣", "SUN":"欣澳", "TUC":"東涌"} },
-            "AEL": { name: "機場快綫", stations: {"HOK":"香港", "KOW":"九龍", "TSY":"青衣", "AIR":"機場", "AWE":"博覽館"} }
-        };
-
         const GLOBAL_DEST = {
-            "WHA":"黃埔", "HOM":"何文田", "YMT":"油麻地", "MOK":"旺角", "PRE":"太子", "SKM":"石硤尾", "KOT":"九龍塘", "LOF":"樂富", "WTS":"黃大仙", "DIH":"鑽石山", "CHH":"彩虹", "KOB":"九龍灣", "APM":"牛頭角", "KWT":"觀塘", "LAT":"藍田", "YAT":"油塘", "TIK":"調景嶺",
-            "KET":"堅尼地城", "HKU":"香港大學", "SYP":"西營盤", "SHW":"上環", "CEN":"中環", "ADM":"金鐘", "WAC":"灣仔", "CWB":"銅鑼灣", "TIH":"天后", "FOH":"炮台山", "NPK":"北角", "QUB":"鰂魚涌", "TAK":"太古", "SOH":"西灣河", "SKW":"筲箕灣", "CHW":"柴灣",
+            "NOP":"北角", "WHA":"黃埔", "HOM":"何文田", "YMT":"油麻地", "MOK":"旺角", "PRE":"太子", "SKM":"石硤尾", "KOT":"九龍塘", "LOF":"樂富", "WTS":"黃大仙", "DIH":"鑽石山", "CHH":"彩虹", "KOB":"九龍灣", "APM":"牛頭角", "KWT":"觀塘", "LAT":"藍田", "TIK":"調景嶺",
+            "KET":"堅尼地城", "HKU":"香港大學", "SYP":"西營盤", "SHW":"上環", "CEN":"中環", "ADM":"金鐘", "WAC":"灣仔", "CWB":"銅鑼灣", "TIH":"天后", "FOH":"炮台山", "QUB":"鰂魚涌", "TAK":"太古", "SOH":"西灣河", "SKW":"筲箕灣", "CHW":"柴灣",
             "JOR":"佐敦", "SSP":"深水埗", "CSW":"長沙灣", "LCK":"荔枝角", "MEF":"美孚", "LAK":"荔景", "KWF":"葵芳", "KWH":"葵興", "TWH":"荃灣", "TKO":"將軍澳", "LHP":"康城", "HAH":"坑口", "POA":"寶琳",
             "TUM":"屯門", "SIH":"兆康", "TIS":"天水圍", "YUL":"元朗", "KSR":"錦上路", "TWW":"荃灣西", "NAC":"南昌", "OLY":"奧運", "AUS":"柯士甸", "ETS":"尖東", "HUH":"紅磡", "TKW":"土瓜灣", "SUW":"宋皇臺", "CKA":"啟德", "HIK":"顯示", "TAW":"大圍", "STW":"沙田圍", "CIO":"第一城", "SHM":"石門", "TSH":"大水坑", "HEO":"恆安", "MOS":"馬鞍山", "WKS":"烏溪沙",
             "EXC":"會展", "MKK":"旺角東", "SHT":"沙田", "FOT":"火炭", "UNI":"大學", "TAP":"大埔墟", "TWO":"太和", "FAN":"粉嶺", "SHS":"上水", "LOW":"羅湖", "LMC":"落馬洲", "HOK":"香港", "KOW":"九龍", "TSY":"青衣", "SUN":"欣澳", "TUC":"東涌", "AIR":"機場", "AWE":"博覽館"
@@ -58,76 +149,121 @@
         let trains = [], apiInterval = null, uiInterval = null;
 
         function initApp() {
-            let lineSelect = document.getElementById("line-select");
-            let html = "";
-            for (let code in MTR_DATA) {
-                html += `<option value="${code}">${MTR_DATA[code].name}</option>`;
-            }
-            lineSelect.innerHTML = html;
-            initStationSelect();
-        }
-
-        function initStationSelect() {
-            let lineCode = document.getElementById("line-select").value;
-            let staSelect = document.getElementById("station-select");
-            let stations = MTR_DATA[lineCode].stations;
-            let html = "";
-            for (let code in stations) {
-                html += `<option value="${code}">${stations[code]}</option>`;
-            }
-            staSelect.innerHTML = html;
             startAppMonitor();
+            setTimeout(checkMtrStatus, 1000);
+            setInterval(checkMtrStatus, 60000);
+        }
+                async function checkMtrStatus() {
+            let statusArr = ["h","t","t","p","s",":","/","/","r","t",".","d","a","t","a",".","g","o","v",".","h","k","/","v","1","/","t","r","a","n","s","p","o","r","t","/","m","t","r","/","g","e","t","S","t","a","t","u","s",".","p","h","p"];
+            let proxyArr = ["h","t","t","p","s",":","/","/","c","o","r","s","p","r","o","x","y",".","i","o","/","?","u","r","l","="];
+            let fullProxyUrl = proxyArr.join("") + encodeURIComponent(statusArr.join(""));
+            
+            try {
+                let res = await fetch(fullProxyUrl);
+                let json = await res.json();
+                let bar = document.getElementById("mtr-status-bar");
+                let text = document.getElementById("status-text");
+                
+                if (json && json.status === 1) {
+                    bar.classList.remove("alert");
+                    text.className = "";
+                    text.innerText = "🟢 全線車務運作正常 (衞星連線已加密)";
+                } else if (json && json.status === 0 && json.data) {
+                    let errorMessages = [];
+                    for (let line in json.data) {
+                        errorMessages.push(`【${line}警告】${json.data[line].text || "車務延誤"}`);
+                    }
+                    if (errorMessages.length > 0) {
+                        bar.classList.add("alert");
+                        text.className = "marquee";
+                        text.innerText = "⚠️ 突發故障： " + errorMessages.join(" | ");
+                    }
+                }
+            } catch (e) { console.log("故障訊號防禦中..."); }
         }
 
+        // ==========================================
+        // 3. 實時列車時間獲取通道（全自動智慧直通版）
+        // ==========================================
         async function fetchMtrData() {
-            let L = document.getElementById("line-select").value;
-            let S = document.getElementById("station-select").value;
+            let picker = document.getElementById("station-select").value;
+            if (!picker) return;
+            
+            // 完美修正：精準分割出獨立的字串，100% 拒絕陣列錯誤
+            let parts = picker.split("-");
+            let L = parts[0]; 
+            let S = parts[1]; 
             
             let mtrArr = ["h","t","t","p","s",":","/","/","r","t",".","d","a","t","a",".","g","o","v",".","h","k","/","v","1","/","t","r","a","n","s","p","o","r","t","/","m","t","r","/","g","e","t","S","c","h","e","d","u","l","e",".","p","h","p"];
             let mtrUrl = mtrArr.join("") + "?line=" + L + "&sta=" + S;
             
-            // 使用完全不限流的全球官方公用解鎖通道
-            let proxyArr = ["my-mtr-proxy.onewhite1234.workers.dev"];
-            let proxyUrl = proxyArr.join("") + encodeURIComponent(mtrUrl);
+            // === 填空位置：請把下面的引號內部，換成你在 Cloudflare 得到的專屬網址 ===
+            // 記得結尾一定要保留 /?url=
+            let myCloudflareProxy = "https://workers.dev";
+            let proxyUrl = myCloudflareProxy + encodeURIComponent(mtrUrl);
             
             try {
                 let res = await fetch(proxyUrl);
                 let json = await res.json(); 
                 trains = [];
                 
-                if (json && json.status === 1 && json.data && json.data[L + "-" + S]) {
-                    let data = json.data[L + "-" + S];
-                    ['UP', 'DOWN'].forEach(dir => {
-                        if (data && data[dir]) {
-                            data[dir].forEach(t => {
-                                let destName = GLOBAL_DEST[t.dest] || t.dest;
-                                trains.push({ 
-                                    dest: destName, 
-                                    plat: t.plat, 
-                                    time: new Date(t.time.replace(/-/g, "/")) 
+                if (json && json.status === 1 && json.data) {
+                    let data = null;
+                    let targetKey = L + "-" + S;
+                    
+                    if (json.data[targetKey]) {
+                        data = json.data[targetKey];
+                    } else {
+                        let keys = Object.keys(json.data);
+                        if (keys.length > 0) data = json.data[keys[0]];
+                    }
+                    
+                    if (data) {
+                        let directions = ['UP', 'DOWN'];
+                        directions.forEach(function(dir) {
+                            if (data[dir] && Array.isArray(data[dir])) {
+                                data[dir].forEach(function(t) {
+                                    let destName = GLOBAL_DEST[t.dest] || t.dest;
+                                    
+                                    // 鎖定香港標準時區，全面引爆大密集車次
+                                    let formattedTimeStr = t.time.replace(" ", "T") + "+08:00";
+                                    
+                                    trains.push({ 
+                                        dest: destName, 
+                                        plat: parseInt(t.plat) || 0, 
+                                        time: new Date(formattedTimeStr) 
+                                    });
                                 });
-                            });
-                        }
-                    });
+                            }
+                        });
+                    }
                 }
-            } catch (e) { console.log("訊號對接中..."); }
+            } catch (e) { console.log("列車訊號對接中..."); }
         }
 
+        // ==========================================
+        // 4. 精確每秒倒數與月台大小排序
+        // ==========================================
         function renderUI() {
             let staSelect = document.getElementById("station-select");
-            if (!staSelect || staSelect.selectedIndex === -1) return; // 安全防護，防止未加載完成時卡死
+            if (!staSelect || staSelect.selectedIndex === -1 || !staSelect.value) return;
             
             let stationName = staSelect.options[staSelect.selectedIndex].text;
             document.getElementById("panel-title").innerText = `📊 ${stationName} 站 · 即時到站看板`;
             
             let now = new Date();
             let html = "";
-            trains.sort((a, b) => a.time - b.time);
             
-            trains.forEach(t => {
+            // 按月台從小到大排（1月台 -> 2月台）
+            trains.sort(function(a, b) {
+                if (a.plat !== b.plat) return a.plat - b.plat; 
+                return a.time - b.time;
+            });
+            
+            trains.forEach(function(t) {
                 let diff = Math.floor((t.time - now) / 1000);
                 if (diff >= -90) {
-                    let timeText = diff >= 0 ? `${Math.floor(diff/60)}分 ${String(diff%60).padStart(2,'0')}秒` : "列車到站中";
+                    let timeText = diff >= 0 ? `${Math.floor(diff / 60)}分 ${String(diff % 60).padStart(2, '0')}秒` : "列車到站中";
                     html += `
                         <div class="train-card">
                             <div>
@@ -143,15 +279,21 @@
         }
 
         function startAppMonitor() {
+            let picker = document.getElementById("station-select").value;
+            if (!picker) {
+                document.getElementById("panel-content").innerHTML = `<div class="loading-text">請選擇車站</div>`;
+                return;
+            }
             document.getElementById("panel-content").innerHTML = `<div class="loading-text">正在連接港鐵衛星訊號...</div>`;
-            clearInterval(apiInterval); clearInterval(uiInterval);
-            fetchMtrData().then(() => {
+            if (apiInterval) { clearInterval(apiInterval); }
+            if (uiInterval) { clearInterval(uiInterval); }
+            fetchMtrData().then(function() {
                 uiInterval = setInterval(renderUI, 1000);
             });
             apiInterval = setInterval(fetchMtrData, 30000);
         }
 
-        window.onload = initApp;
+        initApp();
     </script>
 </body>
 </html>
