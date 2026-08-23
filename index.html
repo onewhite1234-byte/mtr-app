@@ -201,6 +201,9 @@
                 // ==========================================
         // 🌟 獨立背景功能：真．全路綫雷達智慧同步分流網
         // ==========================================
+                // ==========================================
+        // 🌟 獨立背景功能：真．100% 絕對 0 班車中央同步雷達
+        // ==========================================
         async function fetchMtrStatusNotice() {
             let L = document.getElementById("line-select").value;
             
@@ -216,30 +219,13 @@
                 let alertBar = document.getElementById("mtr-alert-bar");
                 let marquee = document.getElementById("notice-marquee");
                 
-                // 💥 究極修正核心：拋棄單一車站偷看！改用「全路綫大計法」！
-                let isCurrentLineTerminated = false;
-                
-                // 如果用家此時沒有選取任何路綫，預設不觸發打烊
-                if (!L) {
-                    isCurrentLineTerminated = false;
-                } else {
-                    // 如果用家選取了路線，我們直接去數全域 trains 的總數量
-                    // 只要當前路線抓回來的班次總數少於或等於 1 班，就說明常規服務真的結束了
-                    if (trains.length <= 1) {
-                        isCurrentLineTerminated = true;
-                    }
-                    
-                    // 特殊防禦：如果是只有兩個車站的迪士尼綫，特別放寬保險絲
-                    // 只要畫面上還有 ARRIVING 或是任何工程車訊號，強行判定路綫依然在線，絕不變黃！
-                    let panelContent = document.getElementById("panel-content");
-                    if (L === "DRL" && panelContent && (panelContent.innerText.includes("ARRIVING") || panelContent.innerText.includes("分"))) {
-                        isCurrentLineTerminated = false;
-                    }
-                }
+                // 💥 鋼鐵判定核心：聽從最高指令！只有當火車數量絕對等於 0 時，才算非營運！
+                // 只要大於 0（比如 length === 1 的深夜 ARRIVING），100% 當作有車，絕不變黃！
+                let isCurrentLineTerminated = (trains.length === 0);
 
                 let lineName = MTR_DATA[L] ? MTR_DATA[L].name : "該路綫";
 
-                // 💥 最高優先權：只有當整條路綫徹底死寂沒車，最頂層才允許變黃色！
+                // 最高優先權：只有 0 班車徹底打烊時，最頂層才強制變黃色！
                 if (isCurrentLineTerminated) {
                     okBar.style.display = "none"; 
                     alertBar.style.display = "block";
@@ -271,7 +257,7 @@
                     return; 
                 }
 
-                // 常規有車營運時，100% 聽話！只要還有車，永遠保持最美麗的綠光！
+                // 常規判定：只要大於 0 有車在跑，就允許走平時的正常/壞車判定！
                 if (json && json.status === 1) {
                     okBar.style.display = "block"; 
                     alertBar.style.display = "none";
@@ -306,7 +292,7 @@
                     }
                 }
                 
-                // 100% 安全回歸綠燈
+                // 只要大於 0 有車且沒有壞車事件，100% 規規矩矩亮起最美丽的綠燈！
                 okBar.style.display = "block"; 
                 alertBar.style.display = "none";
                 
@@ -314,6 +300,7 @@
                 console.log("故障看板對接中..."); 
             }
         }
+
 
 
         // ==========================================
@@ -325,13 +312,14 @@
                 // ==========================================
         // 4. 精確每秒倒數與「中央一體化強行同步變黃」智慧面板
         // ==========================================
+                // ==========================================
+        // 4. 精確每秒倒數與月台大小排序（絕對 0 班車打烊版）
+        // ==========================================
         function renderUI() {
             let staSelect = document.getElementById("station-select");
-            let lineSelect = document.getElementById("line-select");
             if (!staSelect || staSelect.selectedIndex === -1 || !staSelect.value) { return; }
             
             let stationName = staSelect.options[staSelect.selectedIndex].text;
-            let L = lineSelect.value;
             document.getElementById("panel-title").innerText = `📊 ${stationName} 站 · 實時月台 PIDS 顯示屏`;
             
             let now = new Date();
@@ -363,42 +351,19 @@
                 }
             });
             
-            // 💥 智慧核心：判定是不是要等 15 分鐘以上，或者根本沒車
-            let showTerminated = false;
+            // 💥 聽從最高指令：只有火車數量絕對等於 0 的時候，中央看板才顯示 TERMINATED 黃字！
+            // 只要長度大於 0（哪怕只有一班工程車），就大膽刷出常規 PIDS 車次畫面！
             if (trains.length === 0) {
-                showTerminated = true;
-            } else if (trains[0] && trains[0].time) {
-                let diffCheck = Math.floor((trains[0].time - now) / 1000);
-                if (diffCheck >= 900) { showTerminated = true; } // 超過15分鐘判定為打烊
-            }
-            
-            let okBar = document.getElementById("mtr-ok-bar");
-            let alertBar = document.getElementById("mtr-alert-bar");
-            let marquee = document.getElementById("notice-marquee");
-            let lineName = MTR_DATA[L] ? MTR_DATA[L].name : "該路綫";
-
-            if (showTerminated) {
-                // 💥 終極命令：中央看板變黃的同時，直接強行拉閘，命令最上面 100% 同步變黃！
                 document.getElementById("panel-content").innerHTML = `
                     <div class="loading-text" style="color: #ff9500; text-shadow: 0 0 8px #ff9500; font-weight: bold;">
                         非營運時間或暫無班次 TERMINATED
                     </div>
                 `;
-                
-                okBar.style.display = "none"; 
-                alertBar.style.display = "block";
-                
-                alertBar.style.color = "#ff9500";
-                alertBar.style.borderColor = "#ff9500";
-                alertBar.style.boxShadow = "inset 0 0 10px rgba(255,149,0,0.5), 0 0 15px rgba(255,149,0,0.3)";
-                marquee.style.color = "#ff9500";
-                marquee.style.textShadow = "0 0 8px #ff9500, 0 0 12px #ff6a00";
-                marquee.innerText = `⚠️ 【車務通告】${lineName}現已進入非營運時間。 TERMINATED `;
             } else {
-                // 如果有車，正常顯示班次，並把控制權交還給 okBar/alertBar
                 document.getElementById("panel-content").innerHTML = html;
             }
         }
+
 
 
 
