@@ -325,7 +325,7 @@
             `;
         }
 
-        function startAppMonitor() {
+                function startAppMonitor() {
             let S = document.getElementById("station-select").value;
             if (!S) { return; } 
             
@@ -333,12 +333,18 @@
             if (apiInterval) { clearInterval(apiInterval); }
             if (uiInterval) { clearInterval(uiInterval); }
             
-            // 點選車站的一瞬間，立刻光速出擊抓取資料，主動驅動前台同步變色！
+            // 💥 數據一到，下一毫秒立刻強行驅動跑馬燈更新！消滅 1 秒時間差！
             fetchMtrData().then(function() { 
+                renderUI(); // 先刷出 TERMINATED 黃字
+                fetchMtrStatusNotice(); // 跑馬燈立刻同步變黃
                 uiInterval = setInterval(renderUI, 1000); 
             });
-            apiInterval = setInterval(fetchMtrData, 30000);
+            apiInterval = setInterval(async function() {
+                await fetchMtrData();
+                fetchMtrStatusNotice();
+            }, 30000);
         }
+
 
         // 全局開燈指令
         initApp();
