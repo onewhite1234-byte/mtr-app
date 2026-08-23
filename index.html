@@ -198,7 +198,12 @@
                 // ==========================================
         // 🌟 獨立背景功能：真．全港鐵路突發故障手動公告監測
         // ==========================================
+                // ==========================================
+        // 🌟 獨立背景功能：真．全路綫雷達智慧同步分流網
+        // ==========================================
         async function fetchMtrStatusNotice() {
+            let L = document.getElementById("line-select").value;
+            
             let statusPart1 = "ht" + "tps://";
             let statusPart2 = "rt.da" + "ta.g" + "ov.hk/";
             let statusPart3 = "v1/tra" + "nsport/m" + "tr/getSt" + "atus.php";
@@ -211,46 +216,103 @@
                 let alertBar = document.getElementById("mtr-alert-bar");
                 let marquee = document.getElementById("notice-marquee");
                 
-                // 💥 檢查目前網頁中央看板是不是已經由 renderUI 判定為打烊了
-                let panelContent = document.getElementById("panel-content");
-                let isCurrentLineTerminated = panelContent && (panelContent.innerText.includes("TERMINATED") || panelContent.innerText.includes("暫無班次"));
+                // 💥 究極修正核心：拋棄單一車站偷看！改用「全路綫大計法」！
+                let isCurrentLineTerminated = false;
+                
+                // 如果用家此時沒有選取任何路綫，預設不觸發打烊
+                if (!L) {
+                    isCurrentLineTerminated = false;
+                } else {
+                    // 如果用家選取了路線，我們直接去數全域 trains 的總數量
+                    // 只要當前路線抓回來的班次總數少於或等於 1 班，就說明常規服務真的結束了
+                    if (trains.length <= 1) {
+                        isCurrentLineTerminated = true;
+                    }
+                    
+                    // 特殊防禦：如果是只有兩個車站的迪士尼綫，特別放寬保險絲
+                    // 只要畫面上還有 ARRIVING 或是任何工程車訊號，強行判定路綫依然在線，絕不變黃！
+                    let panelContent = document.getElementById("panel-content");
+                    if (L === "DRL" && panelContent && (panelContent.innerText.includes("ARRIVING") || panelContent.innerText.includes("分"))) {
+                        isCurrentLineTerminated = false;
+                    }
+                }
 
-                // 如果中央看板已經變黃打烊，直接跳出，把控制權完全交給 renderUI，絕不自作聰明刷成綠色！
-                if (isCurrentLineTerminated) { return; }
+                let lineName = MTR_DATA[L] ? MTR_DATA[L].name : "該路綫";
 
+                // 💥 最高優先權：只有當整條路綫徹底死寂沒車，最頂層才允許變黃色！
+                if (isCurrentLineTerminated) {
+                    okBar.style.display = "none"; 
+                    alertBar.style.display = "block";
+                    
+                    alertBar.style.color = "#ff9500";
+                    alertBar.style.borderColor = "#ff9500";
+                    alertBar.style.boxShadow = "inset 0 0 10px rgba(255,149,0,0.5), 0 0 15px rgba(255,149,0,0.3)";
+                    marquee.style.color = "#ff9500";
+                    marquee.style.textShadow = "0 0 8px #ff9500, 0 0 12px #ff6a00";
+                    
+                    let extraMsg = "";
+                    if (json && json.status === 0) {
+                        let errs = [];
+                        if (json.text) { errs.push(json.text); }
+                        if (json.data && typeof json.data === 'object') {
+                            for (let key in json.data) {
+                                if (json.data[key]) {
+                                    let mtrRealText = (typeof json.data[key] === 'string') ? json.data[key] : (json.data[key].text || "");
+                                    if (mtrRealText) { errs.push(mtrRealText); }
+                                }
+                            }
+                        }
+                        if (errs.length > 0) {
+                            extraMsg = "  |  ⚠️ 深夜突發車務報告： " + errs.join("  |  ");
+                        }
+                    }
+                    
+                    marquee.innerText = `⚠️ 【車務通告】${lineName}現已進入非營運時間。 TERMINATED${extraMsg} `;
+                    return; 
+                }
+
+                // 常規有車營運時，100% 聽話！只要還有車，永遠保持最美麗的綠光！
                 if (json && json.status === 1) {
-                    okBar.style.display = "block"; alertBar.style.display = "none";
+                    okBar.style.display = "block"; 
+                    alertBar.style.display = "none";
                 } else if (json && json.status === 0) {
                     let realMessages = [];
                     if (json.text) { realMessages.push(json.text); }
                     if (json.data && typeof json.data === 'object') {
                         for (let key in json.data) {
-                            if (json.data[key]) {
-                                let mtrRealText = (typeof json.data[key] === 'string') ? json.data[key] : (json.data[key].text || "");
-                                if (mtrRealText) { realMessages.push(mtrRealText); }
-                            }
+                            let rawData = json.data[key];
+                            if (!rawData) continue;
+                            let mtrRealText = (typeof rawData === 'string') ? rawData : (rawData.text || "");
+                            if (mtrRealText) { realMessages.push(mtrRealText); }
                         }
                     }
                     
                     if (realMessages.length > 0) {
                         let fullText = realMessages.join("  |  ");
-                        okBar.style.display = "none"; alertBar.style.display = "block";
+                        okBar.style.display = "none"; 
+                        alertBar.style.display = "block";
                         marquee.innerText = "⚠️ 特別通告： " + fullText + " ";
                         
-                        // 8號颱風變黃色
                         if (fullText.includes("八號") || fullText.includes("8號")) {
                             alertBar.style.color = "#ff9500"; alertBar.style.borderColor = "#ff9500";
                             alertBar.style.boxShadow = "inset 0 0 10px rgba(255,149,0,0.5), 0 0 15px rgba(255,149,0,0.3)";
                             marquee.style.color = "#ff9500"; marquee.style.textShadow = "0 0 8px #ff9500";
                         } else {
-                            // 白天故障亮紅色
                             alertBar.style.color = "#ff3b30"; alertBar.style.borderColor = "#ff3b30";
                             alertBar.style.boxShadow = "inset 0 0 10px rgba(255,59,48,0.5), 0 0 15px rgba(255,59,48,0.3)";
                             marquee.style.color = "#ff3b30"; marquee.style.textShadow = "0 0 8px #ff3b30";
                         }
+                        return;
                     }
                 }
-            } catch (e) { console.log("故障看板對接中..."); }
+                
+                // 100% 安全回歸綠燈
+                okBar.style.display = "block"; 
+                alertBar.style.display = "none";
+                
+            } catch (e) { 
+                console.log("故障看板對接中..."); 
+            }
         }
 
 
