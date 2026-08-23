@@ -86,6 +86,17 @@
 
         let trains = [], apiInterval = null, uiInterval = null;
 
+        // ===== 辅助函数：判断是否有列车在15分钟内到达 =====
+        function hasTrainSoon() {
+            if (!trains || trains.length === 0) return false;
+            let now = new Date();
+            // 检查是否存在任何列车在 0~900 秒内到达
+            return trains.some(t => {
+                let diff = (t.time - now) / 1000;
+                return diff >= 0 && diff <= 900;
+            });
+        }
+
         function initApp() {
             let lineSelect = document.getElementById("line-select");
             let staSelect = document.getElementById("station-select");
@@ -199,10 +210,10 @@
                 if (json && json.status === 1) {
                     okBar.style.display = "block";
                     alertBar.style.display = "none";
-                    // ===== 新增：恢复绿色或黄色（根据列车数据） =====
+                    // ===== 使用 hasTrainSoon() 判斷 =====
                     let lineSelect = document.getElementById("line-select");
                     let lineName = lineSelect.options[lineSelect.selectedIndex]?.text || "本線路";
-                    if (trains.length === 0) {
+                    if (!hasTrainSoon()) {
                         okBar.style.backgroundColor = "#ff9500";
                         okBar.style.color = "#000";
                         okBar.style.borderColor = "#ff9500";
@@ -301,13 +312,14 @@
 
             // ============================================================
             //  ✨ 控制顶部绿色状态条（非营运时变黄 + 显示线路名）
+            //     判斷條件改為 hasTrainSoon()
             // ============================================================
             let okBar = document.getElementById("mtr-ok-bar");
             let alertBar = document.getElementById("mtr-alert-bar");
             if (okBar.style.display !== "none" && alertBar.style.display === "none") {
                 let lineSelect = document.getElementById("line-select");
                 let lineName = lineSelect.options[lineSelect.selectedIndex]?.text || "本線路";
-                if (trains.length === 0) {
+                if (!hasTrainSoon()) {
                     okBar.style.backgroundColor = "#ff9500";
                     okBar.style.color = "#000";
                     okBar.style.borderColor = "#ff9500";
