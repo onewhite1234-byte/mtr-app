@@ -189,10 +189,9 @@
         // ==========================================
         // 🌟 智慧判定：只要畫面出現 TERMINATED，跑馬燈 100% 同步變黃！
         // ==========================================
-               async function fetchMtrStatusNotice() {
+                  async function fetchMtrStatusNotice() {
             let L = document.getElementById("line-select").value;
             
-            // 💥 恢復你最自豪的無代理拼接大動脈網址！
             let statusPart1 = "ht" + "tps://";
             let statusPart2 = "rt.da" + "ta.g" + "ov.hk/";
             let statusPart3 = "v1/tra" + "nsport/m" + "tr/getSt" + "atus.php";
@@ -205,9 +204,19 @@
                 let alertBar = document.getElementById("mtr-alert-bar");
                 let marquee = document.getElementById("notice-marquee");
                 
-                // 💥 拋棄舊的網頁文字偷看！直接用變數 trains 的數量來判定
-                // 只要列車陣列是空的（0班車），就代表這條路綫 100% 打烊收車了！
-                let isCurrentLineTerminated = (trains.length === 0);
+                // 💥 降魔修正核心：精準數時間！
+                // 檢查第一班車是不是要等 15 分鐘 (900秒) 以上，或者根本沒有車
+                let isCurrentLineTerminated = true;
+                if (trains.length > 0) {
+                    let now = new Date();
+                    let nextTrainTime = trains[0].time; // 拿到最快來的那班車時間
+                    let diffInSeconds = Math.floor((nextTrainTime - now) / 1000);
+                    
+                    // 如果最近的一班車在 15 分鐘以內會到，才算正在營運！
+                    if (diffInSeconds >= 0 && diffInSeconds < 900) {
+                        isCurrentLineTerminated = false;
+                    }
+                }
 
                 let lineName = MTR_DATA[L] ? MTR_DATA[L].name : "該路綫";
 
@@ -282,6 +291,9 @@
         // ==========================================
         // 4. 精確每秒倒數與月台大小排序
         // ==========================================
+                // ==========================================
+        // 4. 精確每秒倒數與月台大小排序（15分鐘深夜防禦完全體）
+        // ==========================================
         function renderUI() {
             let staSelect = document.getElementById("station-select");
             if (!staSelect || staSelect.selectedIndex === -1 || !staSelect.value) { return; }
@@ -292,6 +304,7 @@
             let now = new Date();
             let html = "";
             
+            // 按月台號碼與到站時間從小到大整齊排隊
             trains.sort(function(a, b) {
                 if (a.plat !== b.plat) { return a.plat - b.plat; }
                 return a.time - b.time;
@@ -301,11 +314,13 @@
                 let diff = Math.floor((t.time - now) / 1000);
                 if (diff >= -90) {
                     let timeText = ""; let isArrivingClass = "";
+                    
                     if (diff < 0) {
                         timeText = "列車到站中 ARRIVING"; isArrivingClass = "arriving";
                     } else {
                         timeText = `${Math.floor(diff / 60)}分 ${String(diff % 60).padStart(2, '0')}秒`;
                     }
+                    
                     html += `
                         <div class="train-card">
                             <div>
@@ -318,12 +333,29 @@
                 }
             });
             
-            document.getElementById("panel-content").innerHTML = html || `
-                <div class="loading-text" style="color: #ff9500; text-shadow: 0 0 8px #ff9500; font-weight: bold;">
-                    非營運時間或暫無班次 TERMINATED
-                </div>
-            `;
+            // 💥 究極防禦核心：檢查第一班最快的車是不是要等 15 分鐘 (900秒) 以上，或者根本沒有車
+            let showTerminated = false;
+            if (trains.length === 0) {
+                showTerminated = true;
+            } else {
+                let diffCheck = Math.floor((trains[0].time - now) / 1000);
+                if (diffCheck >= 900) { 
+                    showTerminated = true; // 超過 15 分鐘，直接判定為明早頭班車，啟動收車打烊！
+                }
+            }
+
+            // 根據判定，1 毫秒同步切換前台畫面
+            if (showTerminated) {
+                document.getElementById("panel-content").innerHTML = `
+                    <div class="loading-text" style="color: #ff9500; text-shadow: 0 0 8px #ff9500; font-weight: bold;">
+                        非營運時間或暫無班次 TERMINATED
+                    </div>
+                `;
+            } else {
+                document.getElementById("panel-content").innerHTML = html;
+            }
         }
+
 
                 function startAppMonitor() {
             let S = document.getElementById("station-select").value;
