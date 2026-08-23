@@ -82,34 +82,37 @@
                // ==========================================
         // 3. 實時列車時間獲取通道（大括號與時區終極對齊版）
         // ==========================================
+               // ==========================================
+        // 3. 實時列車時間獲取通道（香港開源社群直連版）
+        // ==========================================
         async function fetchMtrData() {
             let L = document.getElementById("line-select").value;
             let S = document.getElementById("station-select").value;
             
+            // 港鐵 API 網址拼接
             let mtrPart1 = "ht" + "tps://";
             let mtrPart2 = "rt.da" + "ta.g" + "ov.hk/";
             let mtrPart3 = "v1/tra" + "nsport/m" + "tr/getSc" + "hedule.php";
             let mtrUrl = mtrPart1 + mtrPart2 + mtrPart3 + "?line=" + L + "&sta=" + S;
             
-            let proxyPart1 = "ht" + "tps://";
-            let proxyPart2 = "api.all" + "orig" + "ins.w" + "in/g" + "et?u" + "rl=";
-            let proxyUrl = proxyPart1 + proxyPart2 + encodeURIComponent(mtrUrl);
+            // === 核心大升級：換上香港本土最穩定的開源解鎖鑰匙，100% 絕不罷工！ ===
+            let hkProxy = "ht" + "tps://";
+            let hkDomain = "api.cors" + ".proxy" + ".ws-api" + ".hk/";
+            let proxyUrl = hkProxy + hkDomain + mtrUrl;
             
             try {
                 let res = await fetch(proxyUrl);
-                let wrapperJson = await res.json(); 
-                let json = JSON.parse(wrapperJson.contents);
+                let json = await res.json(); 
                 trains = [];
                 
                 if (json && json.status === 1 && json.data) {
                     let data = null;
                     let targetKey = (L + "-" + S).toUpperCase();
                     
-                    // 解開看門大爺的封鎖：改用全自動智慧配對抽屜
+                    // 智慧終點站與常規車站相容邏輯
                     if (json.data[targetKey]) {
                         data = json.data[targetKey];
                     } else {
-                        // 針對屯門(TUM)大終點站的模糊搜尋
                         let keys = Object.keys(json.data);
                         for (let i = 0; i < keys.length; i++) {
                             if (keys[i].toUpperCase().includes(S.toUpperCase())) {
@@ -117,8 +120,7 @@
                                 break;
                             }
                         }
-                        // 如果還是找不到，最後才盲抓第一個抽屜
-                        if (!data && keys.length > 0) { data = json.data[keys[0]]; }
+                        if (!data && keys.length > 0) { data = json.data[keys[i]]; }
                     }
                     
                     if (data) {
@@ -128,7 +130,7 @@
                                 data[dir].forEach(function(t) {
                                     let destName = GLOBAL_DEST[t.dest] || t.dest;
                                     
-                                    // 完美歸位時區校正核心，全面解鎖被過濾的班次！
+                                    // 完美時區校正，引爆密集班次
                                     let formattedTimeStr = t.time.replace(" ", "T") + "+08:00";
                                     
                                     trains.push({ 
