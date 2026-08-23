@@ -186,23 +186,9 @@
             } catch (e) { console.log("列車訊號對接中..."); }
         }
 
-        // ==========================================
-        // 🌟 智慧判定：只要畫面出現 TERMINATED，跑馬燈 100% 同步變黃！
-        // ==========================================
-                  // ==========================================
-        // 🌟 獨立背景功能：真．100% 中央同步與全故障防禦雷達
-        // ==========================================
+
                 // ==========================================
-        // 🌟 獨立背景功能：真．100% 中央狀態鎖與全防禦雷達
-        // ==========================================
-                // ==========================================
-        // 🌟 獨立背景功能：真．全港鐵路突發故障手動公告監測
-        // ==========================================
-                // ==========================================
-        // 🌟 獨立背景功能：真．全路綫雷達智慧同步分流網
-        // ==========================================
-                // ==========================================
-        // 🌟 獨立背景功能：真．100% 絕對 0 班車中央同步雷達
+        // 🌟 獨立背景功能：15分鐘時間防禦 · 中央同步雷達
         // ==========================================
         async function fetchMtrStatusNotice() {
             let L = document.getElementById("line-select").value;
@@ -219,13 +205,22 @@
                 let alertBar = document.getElementById("mtr-alert-bar");
                 let marquee = document.getElementById("notice-marquee");
                 
-                // 💥 鋼鐵判定核心：聽從最高指令！只有當火車數量絕對等於 0 時，才算非營運！
-                // 只要大於 0（比如 length === 1 的深夜 ARRIVING），100% 當作有車，絕不變黃！
-                let isCurrentLineTerminated = (trains.length === 0);
+                // 💥 智慧時間判定：如果根本沒車，或者是第一班車要等 15 分鐘 (900秒) 以上，100% 算打烊！
+                let isCurrentLineTerminated = false;
+                if (trains.length === 0) {
+                    isCurrentLineTerminated = true;
+                } else if (trains[0] && trains[0].time) {
+                    let nowCheck = new Date();
+                    let diffCheck = Math.floor((trains[0].time - nowCheck) / 1000);
+                    // 只要第一班車要等 15 分鐘以上（例如 220 分鐘），強行判定為打烊！但 ARRIVING 工程車會小於 0，所以能完美保留！
+                    if (diffCheck >= 900) { 
+                        isCurrentLineTerminated = true; 
+                    }
+                }
 
                 let lineName = MTR_DATA[L] ? MTR_DATA[L].name : "該路綫";
 
-                // 最高優先權：只有 0 班車徹底打烊時，最頂層才強制變黃色！
+                // 最高優先權：只要判定為收車打烊，最頂層強制變黃色！
                 if (isCurrentLineTerminated) {
                     okBar.style.display = "none"; 
                     alertBar.style.display = "block";
@@ -257,7 +252,7 @@
                     return; 
                 }
 
-                // 常規判定：只要大於 0 有車在跑，就允許走平時的正常/壞車判定！
+                // 常規判定：如果是 15 分鐘內的常規車或正在 ARRIVING 的工程車，規規矩矩走平時判定
                 if (json && json.status === 1) {
                     okBar.style.display = "block"; 
                     alertBar.style.display = "none";
@@ -292,7 +287,6 @@
                     }
                 }
                 
-                // 只要大於 0 有車且沒有壞車事件，100% 規規矩矩亮起最美丽的綠燈！
                 okBar.style.display = "block"; 
                 alertBar.style.display = "none";
                 
@@ -300,6 +294,7 @@
                 console.log("故障看板對接中..."); 
             }
         }
+
 
 
 
@@ -314,6 +309,9 @@
         // ==========================================
                 // ==========================================
         // 4. 精確每秒倒數與月台大小排序（絕對 0 班車打烊版）
+        // ==========================================
+                // ==========================================
+        // 4. 精確每秒倒數與月台大小排序（15分鐘時間過濾版）
         // ==========================================
         function renderUI() {
             let staSelect = document.getElementById("station-select");
@@ -351,9 +349,16 @@
                 }
             });
             
-            // 💥 聽從最高指令：只有火車數量絕對等於 0 的時候，中央看板才顯示 TERMINATED 黃字！
-            // 只要長度大於 0（哪怕只有一班工程車），就大膽刷出常規 PIDS 車次畫面！
+            // 💥 中央看板同步時間判定：只要最快的那班車要等 15 分鐘以上，或者根本沒車，一秒切換為黃字打烊！
+            let showTerminated = false;
             if (trains.length === 0) {
+                showTerminated = true;
+            } else if (trains[0] && trains[0].time) {
+                let diffCheck = Math.floor((trains[0].time - now) / 1000);
+                if (diffCheck >= 900) { showTerminated = true; } // 超過 15 分鐘直接算打烊
+            }
+
+            if (showTerminated) {
                 document.getElementById("panel-content").innerHTML = `
                     <div class="loading-text" style="color: #ff9500; text-shadow: 0 0 8px #ff9500; font-weight: bold;">
                         非營運時間或暫無班次 TERMINATED
