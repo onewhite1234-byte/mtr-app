@@ -102,11 +102,11 @@
             let proxyPart2 = "api.all" + "orig" + "ins.w" + "in/g" + "et?u" + "rl=";
             let proxyUrl = proxyPart1 + proxyPart2 + encodeURIComponent(mtrUrl);
             
-            try {
+                        try {
                 let res = await fetch(proxyUrl);
                 let wrapperJson = await res.json(); 
                 
-                // 這個通道會把原始資料打包在 .contents 裡面，我們把它解開
+                // 解開 allorigins 的包裝
                 let json = JSON.parse(wrapperJson.contents);
                 trains = [];
                 
@@ -126,9 +126,11 @@
                         directions.forEach(function(dir) {
                             if (data[dir] && Array.isArray(data[dir])) {
                                 data[dir].forEach(function(t) {
+                                    
+                                    // === 核心修正：直接查超級大辭典，查不到就用原始代碼，徹底解除烏溪沙魔咒！ ===
                                     let destName = GLOBAL_DEST[t.dest] || t.dest;
                                     
-                                    // 昨晚大成功的時區校正核心，引爆密集班次
+                                    // 鎖定香港標準時區
                                     let formattedTimeStr = t.time.replace(" ", "T") + "+08:00";
                                     
                                     trains.push({ 
@@ -142,7 +144,7 @@
                     }
                 }
             } catch (e) { console.log("列車訊號對接中..."); }
-        }
+
         // ==========================================
         // 4. 精確每秒倒數與月台大小排序
         // ==========================================
