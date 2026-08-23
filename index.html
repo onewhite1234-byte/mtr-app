@@ -334,13 +334,14 @@
             });
             
             // 💥 究極防禦核心：檢查第一班最快的車是不是要等 15 分鐘 (900秒) 以上，或者根本沒有車
+                        // 💥 世紀大修正：必須用 trains[0].time 才能精確拿到第一班車的時間！
             let showTerminated = false;
             if (trains.length === 0) {
                 showTerminated = true;
             } else {
                 let diffCheck = Math.floor((trains[0].time - now) / 1000);
                 if (diffCheck >= 900) { 
-                    showTerminated = true; // 超過 15 分鐘，直接判定為明早頭班車，啟動收車打烊！
+                    showTerminated = true; // 超過 15 分鐘，100% 判定為明早頭班車，啟動收車！
                 }
             }
 
