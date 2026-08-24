@@ -18,6 +18,7 @@
             background: #000;
             border: 2px solid #4cd964;
             box-shadow: inset 0 0 8px rgba(76,217,100,0.3), 0 0 10px rgba(76,217,100,0.2);
+            position: relative;
         }
         #status-bar {
             display: inline-block;
@@ -29,15 +30,17 @@
             text-shadow: 0 0 6px #4cd964;
             white-space: nowrap;
             width: 100%;
+            position: relative;
         }
         @keyframes marquee-scroll {
-            0% { transform: translateX(0); }
+            0% { transform: translateX(100%); }
             100% { transform: translateX(-100%); }
         }
         .scroll-active {
             animation: marquee-scroll 15s linear infinite;
-            padding-left: 100%;
             width: auto;
+            padding-left: 0;
+            padding-right: 0;
         }
 
         #alert-bar { background: #000; color: #ff3b30; padding: 14px; border-radius: 8px; font-size: 16px; font-weight: bold; margin: 15px 0; border: 2px solid #ff3b30; display: none; overflow: hidden; white-space: nowrap; }
@@ -103,25 +106,15 @@
         // 2. 目的地名稱映射（轉乘站只出現一次）
         // ============================================================
         const DEST_NAMES = {
-            // 荃灣綫
             "TSW":"荃灣","TWH":"大窩口","KWH":"葵興","KWF":"葵芳","LAK":"荔景","MEF":"美孚","LCK":"荔枝角","CSW":"長沙灣","SSP":"深水埗","PRE":"太子","MOK":"旺角","YMT":"油麻地","JOR":"佐敦","TST":"尖沙咀","ADM":"金鐘","CEN":"中環",
-            // 觀塘綫
             "TIK":"調景嶺","YAT":"油塘","LAT":"藍田","KWT":"觀塘","NTK":"牛頭角","KOB":"九龍灣","CHH":"彩虹","DIH":"鑽石山","WTS":"黃大仙","LOF":"樂富","KOT":"九龍塘","SKM":"石硤尾","HOM":"何文田","WHA":"黃埔",
-            // 港島綫
             "CHW":"柴灣","HFC":"杏花邨","SKW":"筲箕灣","SWH":"西灣河","TAK":"太古","QUB":"鰂魚涌","NOP":"北角","FOH":"炮台山","TIH":"天后","CWB":"銅鑼灣","WAC":"灣仔","SHW":"上環","SYP":"西營盤","HKU":"香港大學","KET":"堅尼地城",
-            // 將軍澳綫
             "POA":"寶琳","LHP":"康城","HAH":"坑口","TKO":"將軍澳",
-            // 東涌綫
             "TUC":"東涌","SUN":"欣澳","TSY":"青衣","NAC":"南昌","OLY":"奧運","KOW":"九龍","HOK":"香港",
-            // 南港島綫
             "WOH":"海怡半島","LET":"利東","WCH":"黃竹坑","OCP":"海洋公園",
-            // 迪士尼綫
             "DIS":"迪士尼",
-            // 機場快綫
             "AIR":"機場","AWE":"博覽館",
-            // 東鐵綫
             "LOW":"羅湖","LMC":"落馬洲","SHS":"上水","FAN":"粉嶺","TWO":"太和","TAP":"大埔墟","UNI":"大學","RAC":"馬場","FOT":"火炭","SHT":"沙田","TAW":"大圍","MKK":"旺角東","HUH":"紅磡","EXC":"會展",
-            // 屯馬綫
             "TUM":"屯門","SIH":"兆康","TIS":"天水圍","LOP":"朗屏","YUL":"元朗","KSR":"錦上路","TWW":"荃灣西","AUS":"柯士甸","ETS":"尖東","TKW":"土瓜灣","SUW":"宋皇臺","CKA":"啟德","HIK":"顯徑","STW":"沙田圍","CIO":"第一城","SHM":"石門","TSH":"大水坑","HEO":"恆安","MOS":"馬鞍山","WKS":"烏溪沙"
         };
 
@@ -133,7 +126,7 @@
         //    true  = 模擬測試（用假數據顯示黃色）
         //    false = 連接真實港鐵 API
         // ============================================================
-        const SIMULATE = false;
+        const SIMULATE = true;
 
         function updateStatusBar() {
             const wrapper = document.getElementById("status-bar-wrapper");
@@ -153,8 +146,8 @@
             const lineName = lineSel.options[lineSel.selectedIndex]?.text || "本線路";
 
             bar.classList.remove('scroll-active');
-            bar.style.paddingLeft = '0';
             bar.style.width = '100%';
+            bar.style.transform = 'none';
 
             if (!hasSoon && trains.length > 0) {
                 wrapper.style.background = "#ff9500";
@@ -162,7 +155,8 @@
                 wrapper.style.boxShadow = "inset 0 0 10px rgba(255,149,0,0.5), 0 0 15px rgba(255,149,0,0.3)";
                 bar.style.color = "#000000";
                 bar.style.textShadow = "0 0 8px #ff9500, 0 0 12px #ff6a00";
-                bar.innerText = `⚠️ ${lineName} 已經進入非運營時間 ⚠️ ${lineName} 已經進入非運營時間 ⚠️ ${lineName} 已經進入非運營時間`;
+                bar.innerText = `⚠️ ${lineName} 已經進入非運營時間`;
+                void bar.offsetWidth;
                 bar.classList.add('scroll-active');
             } else if (hasSoon) {
                 wrapper.style.background = "#000000";
@@ -292,7 +286,8 @@
                 wrapper.style.boxShadow = "inset 0 0 10px rgba(255,59,48,0.5), 0 0 15px rgba(255,59,48,0.3)";
                 bar.style.color = "#ffffff";
                 bar.style.textShadow = "0 0 8px #ff3b30";
-                bar.innerText = `⚠️ 無法連接港鐵伺服器 ⚠️ 無法連接港鐵伺服器 ⚠️ 無法連接港鐵伺服器`;
+                bar.innerText = `⚠️ 無法連接港鐵伺服器`;
+                void bar.offsetWidth;
                 bar.classList.add('scroll-active');
             }
         }
