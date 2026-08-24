@@ -15,38 +15,42 @@
             padding: 0;
             margin: 0 0 15px 0;
             border-radius: 8px;
+            position: relative;
             background: #000;
             border: 2px solid #4cd964;
             box-shadow: inset 0 0 8px rgba(76,217,100,0.3), 0 0 10px rgba(76,217,100,0.2);
-            position: relative;
+            height: 50px;
+            display: flex;
+            align-items: center;
         }
         #status-bar {
             display: inline-block;
-            padding: 15px 0;
+            padding: 0 0;
             font-size: 16px;
             font-weight: bold;
             text-align: center;
+            width: 100%;
+            background: transparent;
             color: #4cd964;
             text-shadow: 0 0 6px #4cd964;
+            border-radius: 8px;
             white-space: nowrap;
-            width: 100%;
             position: relative;
+            left: 0;
+            transition: none;
         }
         @keyframes marquee-scroll {
-            0% { transform: translateX(100%); }
-            100% { transform: translateX(-100%); }
+            0% { margin-left: 100%; }
+            100% { margin-left: -100%; }
         }
         .scroll-active {
-            animation: marquee-scroll 15s linear infinite;
-            width: auto;
-            padding-left: 0;
-            padding-right: 0;
+            animation: marquee-scroll 20s linear infinite;
+            width: auto !important;
         }
 
         #alert-bar { background: #000; color: #ff3b30; padding: 14px; border-radius: 8px; font-size: 16px; font-weight: bold; margin: 15px 0; border: 2px solid #ff3b30; display: none; overflow: hidden; white-space: nowrap; }
-        #alert-bar .marquee { display: inline-block; padding-left: 100%; animation: marquee-alert 20s linear infinite; }
-        @keyframes marquee-alert { 0% { transform: translateX(0); } 100% { transform: translateX(-100%); } }
-
+        #alert-bar .marquee { display: inline-block; padding-left: 100%; animation: marquee 20s linear infinite; }
+        @keyframes marquee { 0% { transform: translateX(0); } 100% { transform: translateX(-100%); } }
         .picker { background: #111; border-radius: 8px; padding: 15px; margin: 15px 0; display: flex; gap: 10px; border: 1px solid #222; }
         .picker select { flex: 1; padding: 12px; background: #000; color: #ffd700; border: 1px solid #ff9500; border-radius: 6px; font-size: 16px; font-weight: bold; }
         .panel { background: #000; border-radius: 12px; padding: 25px; border: 3px solid #2c2c2e; min-height: 180px; }
@@ -86,94 +90,37 @@
     </div>
 
     <script>
-        // ============================================================
-        // 1. 線路數據（轉乘站只出現一次）
-        // ============================================================
         const LINES = {
-            "TWL": { name: "荃灣綫", stations: {"TSW":"荃灣","TWH":"大窩口","KWH":"葵興","KWF":"葵芳","LAK":"荔景","MEF":"美孚","LCK":"荔枝角","CSW":"長沙灣","SSP":"深水埗","PRE":"太子","MOK":"旺角","YMT":"油麻地","JOR":"佐敦","TST":"尖沙咀","ADM":"金鐘","CEN":"中環"} },
-            "KTL": { name: "觀塘綫", stations: {"TIK":"調景嶺","YAT":"油塘","LAT":"藍田","KWT":"觀塘","NTK":"牛頭角","KOB":"九龍灣","CHH":"彩虹","DIH":"鑽石山","WTS":"黃大仙","LOF":"樂富","KOT":"九龍塘","SKM":"石硤尾","PRE":"太子","MOK":"旺角","YMT":"油麻地","HOM":"何文田","WHA":"黃埔"} },
-            "ISL": { name: "港島綫", stations: {"CHW":"柴灣","HFC":"杏花邨","SKW":"筲箕灣","SWH":"西灣河","TAK":"太古","QUB":"鰂魚涌","NOP":"北角","FOH":"炮台山","TIH":"天后","CWB":"銅鑼灣","WAC":"灣仔","ADM":"金鐘","CEN":"中環","SHW":"上環","SYP":"西營盤","HKU":"香港大學","KET":"堅尼地城"} },
-            "TKL": { name: "將軍澳綫", stations: {"POA":"寶琳","LHP":"康城","HAH":"坑口","TKO":"將軍澳","TIK":"調景嶺","YAT":"油塘","QUB":"鰂魚涌","NOP":"北角"} },
-            "TCL": { name: "東涌綫", stations: {"TUC":"東涌","SUN":"欣澳","TSY":"青衣","LAK":"荔景","NAC":"南昌","OLY":"奧運","KOW":"九龍","HOK":"香港"} },
-            "SIL": { name: "南港島綫", stations: {"WOH":"海怡半島","LET":"利東","WCH":"黃竹坑","OCP":"海洋公園","ADM":"金鐘"} },
-            "DRL": { name: "迪士尼綫", stations: {"SUN":"欣澳","DIS":"迪士尼"} },
-            "AEL": { name: "機場快綫", stations: {"HOK":"香港","KOW":"九龍","TSY":"青衣","AIR":"機場","AWE":"博覽館"} },
-            "EAL": { name: "東鐵綫", stations: {"LOW":"羅湖","LMC":"落馬洲","SHS":"上水","FAN":"粉嶺","TWO":"太和","TAP":"大埔墟","UNI":"大學","RAC":"馬場","FOT":"火炭","SHT":"沙田","TAW":"大圍","KOT":"九龍塘","MKK":"旺角東","HUH":"紅磡","EXC":"會展","ADM":"金鐘"} },
-            "TML": { name: "屯馬綫", stations: {"TUM":"屯門","SIH":"兆康","TIS":"天水圍","LOP":"朗屏","YUL":"元朗","KSR":"錦上路","TWW":"荃灣西","MEF":"美孚","NAC":"南昌","AUS":"柯士甸","ETS":"尖東","HUH":"紅磡","HOM":"何文田","TKW":"土瓜灣","SUW":"宋皇臺","CKA":"啟德","DIH":"鑽石山","HIK":"顯徑","TAW":"大圍","STW":"沙田圍","CIO":"第一城","SHM":"石門","TSH":"大水坑","HEO":"恆安","MOS":"馬鞍山","WKS":"烏溪沙"} }
+            "TWL": { name: "荃灣綫 Tsuen Wan Line", stations: {"TSW":"荃灣 Tsuen Wan","TWH":"大窩口 Tai Wo Hau","KWH":"葵興 Kwai Hing","KWF":"葵芳 Kwai Fong","LAK":"荔景 Lai King","MEF":"美孚 Mei Foo","LCK":"荔枝角 Lai Chi Kok","CSW":"長沙灣 Cheung Sha Wan","SSP":"深水埗 Sham Shui Po","PRE":"太子 Prince Edward","MOK":"旺角 Mong Kok","YMT":"油麻地 Yau Ma Tei","JOR":"佐敦 Jordan","TST":"尖沙咀 Tsim Sha Tsui","ADM":"金鐘 Admiralty","CEN":"中環 Central"} },
+            "KTL": { name: "觀塘綫 Kwun Tong Line", stations: {"TIK":"調景嶺 Tiu Keng Leng","YAT":"油塘 Yau Tong","LAT":"藍田 Lam Tin","KWT":"觀塘 Kwun Tong","NTK":"牛頭角 Ngau Tau Kok","KOB":"九龍灣 Kowloon Bay","CHH":"彩虹 Choi Hung","DIH":"鑽石山 Diamond Hill","WTS":"黃大仙 Wong Tai Sin","LOF":"樂富 Lok Fu","KOT":"九龍塘 Kowloon Tong","SKM":"石硤尾 Shek Kip Mei","PRE":"太子 Prince Edward","MOK":"旺角 Mong Kok","YMT":"油麻地 Yau Ma Tei","HOM":"何文田 Ho Man Tin","WHA":"黃埔 Whampoa"} },
+            "ISL": { name: "港島綫 Island Line", stations: {"CHW":"柴灣 Chai Wan","HFC":"杏花邨 Heng Fa Chuen","SKW":"筲箕灣 Shau Kei Wan","SWH":"西灣河 Sai Wan Ho","TAK":"太古 Tai Koo","QUB":"鰂魚涌 Quarry Bay","NOP":"北角 North Point","FOH":"炮台山 Fortress Hill","TIH":"天后 Tin Hau","CWB":"銅鑼灣 Causeway Bay","WAC":"灣仔 Wan Chai","ADM":"金鐘 Admiralty","CEN":"中環 Central","SHW":"上環 Sheung Wan","SYP":"西營盤 Sai Ying Pun","HKU":"香港大學 HKU","KET":"堅尼地城 Kennedy Town"} },
+            "TKL": { name: "將軍澳綫 Tseung Kwan O Line", stations: {"POA":"寶琳 Po Lam","LHP":"康城 LOHAS Park","HAH":"坑口 Hang Hau","TKO":"將軍澳 Tseung Kwan O","TIK":"調景嶺 Tiu Keng Leng","YAT":"油塘 Yau Tong","QUB":"鰂魚涌 Quarry Bay","NOP":"北角 North Point"} },
+            "TCL": { name: "東涌綫 Tung Chung Line", stations: {"TUC":"東涌 Tung Chung","SUN":"欣澳 Sunny Bay","TSY":"青衣 Tsing Yi","LAK":"荔景 Lai King","NAC":"南昌 Nam Cheong","OLY":"奧運 Olympic","KOW":"九龍 Kowloon","HOK":"香港 Hong Kong"} },
+            "SIL": { name: "南港島綫 South Island Line", stations: {"SOH":"海怡半島 South Horizons","LET":"利東 Lei Tung","WCH":"黃竹坑 Wong Chuk Hang","OCP":"海洋公園 Ocean Park","ADM":"金鐘 Admiralty"} },
+            "DRL": { name: "迪士尼綫 Disneyland Resort Line", stations: {"SUN":"欣澳 Sunny Bay","DIS":"迪士尼 Disneyland Resort"} },
+            "AEL": { name: "機場快綫 Airport Express", stations: {"HOK":"香港 Hong Kong","KOW":"九龍 Kowloon","TSY":"青衣 Tsing Yi","AIR":"機場 Airport","AWE":"博覽館 AsiaWorld-Expo"} },
+            "EAL": { name: "東鐵綫 East Rail Line", stations: {"LOW":"羅湖 Lo Wu","LMC":"落馬洲 Lok Ma Chau","SHS":"上水 Sheung Shui","FAN":"粉嶺 Fanling","TWO":"太和 Tai Wo","TAP":"大埔墟 Tai Po Market","UNI":"大學 University","RAC":"馬場 Racecourse","FOT":"火炭 Fo Tan","SHT":"沙田 Sha Tin","TAW":"大圍 Tai Wai","KOT":"九龍塘 Kowloon Tong","MKK":"旺角東 Mong Kok East","HUH":"紅磡 Hung Hom","EXC":"會展 Exhibition Centre","ADM":"金鐘 Admiralty"} },
+            "TML": { name: "屯馬綫 Tuen Ma Line", stations: {"TUM":"屯門 Tuen Mun","SIH":"兆康 Siu Hong","TIS":"天水圍 Tin Shui Wai","LOP":"朗屏 Long Ping","YUL":"元朗 Yuen Long","KSR":"錦上路 Kam Sheung Road","TWW":"荃灣西 Tsuen Wan West","MEF":"美孚 Mei Foo","NAC":"南昌 Nam Cheong","AUS":"柯士甸 Austin","ETS":"尖東 East Tsim Sha Tsui","HUH":"紅磡 Hung Hom","HOM":"何文田 Ho Man Tin","TKW":"土瓜灣 To Kwa Wan","SUW":"宋皇臺 Sung Wong Toi","CKA":"啟德 Kai Tak","DIH":"鑽石山 Diamond Hill","HIK":"顯徑 Hin Keng","TAW":"大圍 Tai Wai","CKT":"車公廟 Che Kung Temple","STW":"沙田圍 Sha Tin Wai","CIO":"第一城 City One","SHM":"石門 Shek Mun","TSH":"大水坑 Tai Shui Hang","HEO":"恆安 Heng On","MOS":"馬鞍山 Ma On Shan","WKS":"烏溪沙 Wu Kai Sha"} }
         };
 
-        // ============================================================
-        // 2. 目的地名稱映射（轉乘站只出現一次）
-        // ============================================================
         const DEST_NAMES = {
-            "TSW":"荃灣","TWH":"大窩口","KWH":"葵興","KWF":"葵芳","LAK":"荔景","MEF":"美孚","LCK":"荔枝角","CSW":"長沙灣","SSP":"深水埗","PRE":"太子","MOK":"旺角","YMT":"油麻地","JOR":"佐敦","TST":"尖沙咀","ADM":"金鐘","CEN":"中環",
-            "TIK":"調景嶺","YAT":"油塘","LAT":"藍田","KWT":"觀塘","NTK":"牛頭角","KOB":"九龍灣","CHH":"彩虹","DIH":"鑽石山","WTS":"黃大仙","LOF":"樂富","KOT":"九龍塘","SKM":"石硤尾","HOM":"何文田","WHA":"黃埔",
-            "CHW":"柴灣","HFC":"杏花邨","SKW":"筲箕灣","SWH":"西灣河","TAK":"太古","QUB":"鰂魚涌","NOP":"北角","FOH":"炮台山","TIH":"天后","CWB":"銅鑼灣","WAC":"灣仔","SHW":"上環","SYP":"西營盤","HKU":"香港大學","KET":"堅尼地城",
-            "POA":"寶琳","LHP":"康城","HAH":"坑口","TKO":"將軍澳",
-            "TUC":"東涌","SUN":"欣澳","TSY":"青衣","NAC":"南昌","OLY":"奧運","KOW":"九龍","HOK":"香港",
-            "WOH":"海怡半島","LET":"利東","WCH":"黃竹坑","OCP":"海洋公園",
-            "DIS":"迪士尼",
-            "AIR":"機場","AWE":"博覽館",
-            "LOW":"羅湖","LMC":"落馬洲","SHS":"上水","FAN":"粉嶺","TWO":"太和","TAP":"大埔墟","UNI":"大學","RAC":"馬場","FOT":"火炭","SHT":"沙田","TAW":"大圍","MKK":"旺角東","HUH":"紅磡","EXC":"會展",
-            "TUM":"屯門","SIH":"兆康","TIS":"天水圍","LOP":"朗屏","YUL":"元朗","KSR":"錦上路","TWW":"荃灣西","AUS":"柯士甸","ETS":"尖東","TKW":"土瓜灣","SUW":"宋皇臺","CKA":"啟德","HIK":"顯徑","STW":"沙田圍","CIO":"第一城","SHM":"石門","TSH":"大水坑","HEO":"恆安","MOS":"馬鞍山","WKS":"烏溪沙"
+            "NOP":"北角 North Point","WHA":"黃埔 Whampoa","HOM":"何文田 Ho Man Tin","YMT":"油麻地 Yau Ma Tei","MOK":"旺角 Mong Kok","PRE":"太子 Prince Edward","SKM":"石硤尾 Shek Kip Mei","KOT":"九龍塘 Kowloon Tong","LOF":"樂富 Lok Fu","WTS":"黃大仙 Wong Tai Sin","DIH":"鑽石山 Diamond Hill","CHH":"彩虹 Choi Hung","KOB":"九龍灣 Kowloon Bay","NTK":"牛頭角 Ngau Tau Kok","KWT":"觀塘 Kwun Tong","LAT":"藍田 Lam Tin","YAT":"油塘 Yau Tong","TIK":"調景嶺 Tiu Keng Leng",
+            "KET":"堅尼地城 Kennedy Town","HKU":"香港大學 HKU","SYP":"西營盤 Sai Ying Pun","SHW":"上環 Sheung Wan","CEN":"中環 Central","ADM":"金鐘 Admiralty","WAC":"灣仔 Wan Chai","CWB":"銅鑼灣 Causeway Bay","TIH":"天后 Tin Hau","FOH":"炮台山 Fortress Hill","QUB":"鰂魚涌 Quarry Bay","TAK":"太古 Tai Koo","SWH":"西灣河 Sai Wan Ho","SKW":"筲箕灣 Shau Kei Wan","CHW":"柴灣 Chai Wan","HFC":"杏花邨 Heng Fa Chuen",
+            "JOR":"佐敦 Jordan","SSP":"深水埗 Sham Shui Po","CSW":"長沙灣 Cheung Sha Wan","LCK":"荔枝角 Lai Chi Kok","MEF":"美孚 Mei Foo","LAK":"荔景 Lai King","KWF":"葵芳 Kwai Fong","KWH":"葵興 Kwai Hing","TSW":"荃灣 Tsuen Wan","TWH":"大窩口 Tai Wo Hau","TKO":"將軍澳 Tseung Kwan O","LHP":"康城 LOHAS Park","HAH":"坑口 Hang Hau","POA":"寶琳 Po Lam",
+            "TUM":"屯門 Tuen Mun","SIH":"兆康 Siu Hong","TIS":"天水圍 Tin Shui Wai","LOP":"朗屏 Long Ping","YUL":"元朗 Yuen Long","KSR":"錦上路 Kam Sheung Road","TWW":"荃灣西 Tsuen Wan West","NAC":"南昌 Nam Cheong","OLY":"奧運 Olympic","AUS":"柯士甸 Austin","ETS":"尖東 East Tsim Sha Tsui","HUH":"紅磡 Hung Hom","TKW":"土瓜灣 To Kwa Wan","SUW":"宋皇臺 Sung Wong Toi","CKA":"啟德 Kai Tak","HIK":"顯徑 Hin Keng","TAW":"大圍 Tai Wai","CKT":"車公廟 Che Kung Temple","STW":"沙田圍 Sha Tin Wai","CIO":"第一城 City One","SHM":"石門 Shek Mun","TSH":"大水坑 Tai Shui Hang","HEO":"恆安 Heng On","MOS":"馬鞍山 Ma On Shan","WKS":"烏溪沙 Wu Kai Sha",
+            "EXC":"會展 Exhibition Centre","MKK":"旺角東 Mong Kok East","SHT":"沙田 Sha Tin","FOT":"火炭 Fo Tan","RAC":"馬場 Racecourse","UNI":"大學 University","TAP":"大埔墟 Tai Po Market","TWO":"太和 Tai Wo","FAN":"粉嶺 Fanling","SHS":"上水 Sheung Shui","LOW":"羅湖 Lo Wu","LMC":"落馬洲 Lok Ma Chau","HOK":"香港 Hong Kong","KOW":"九龍 Kowloon","TSY":"青衣 Tsing Yi","SUN":"欣澳 Sunny Bay","TUC":"東涌 Tung Chung","AIR":"機場 Airport","AWE":"博覽館 AsiaWorld-Expo","DIS":"迪士尼 Disneyland Resort",
+            "OCP":"海洋公園 Ocean Park","WCH":"黃竹坑 Wong Chuk Hang","LET":"利東 Lei Tung","SOH":"海怡半島 South Horizons"
         };
 
         let trains = [];
         let timer1 = null, timer2 = null;
+        const SIMULATE = false;
 
-        // ============================================================
-        // 3. 模擬模式開關
-        //    true  = 模擬測試（用假數據顯示黃色）
-        //    false = 連接真實港鐵 API
-        // ============================================================
-        const SIMULATE = true;
-
-        function updateStatusBar() {
-            const wrapper = document.getElementById("status-bar-wrapper");
-            const bar = document.getElementById("status-bar");
-            const now = new Date();
-
-            let hasSoon = false;
-            for (let t of trains) {
-                const diff = (t.time - now) / 1000;
-                if (diff >= 0 && diff <= 900) {
-                    hasSoon = true;
-                    break;
-                }
-            }
-
-            const lineSel = document.getElementById("line-select");
-            const lineName = lineSel.options[lineSel.selectedIndex]?.text || "本線路";
-
-            bar.classList.remove('scroll-active');
-            bar.style.width = '100%';
-            bar.style.transform = 'none';
-
-            if (!hasSoon && trains.length > 0) {
-                wrapper.style.background = "#ff9500";
-                wrapper.style.border = "2px solid #ff9500";
-                wrapper.style.boxShadow = "inset 0 0 10px rgba(255,149,0,0.5), 0 0 15px rgba(255,149,0,0.3)";
-                bar.style.color = "#000000";
-                bar.style.textShadow = "0 0 8px #ff9500, 0 0 12px #ff6a00";
-                bar.innerText = `⚠️ ${lineName} 已經進入非運營時間`;
-                void bar.offsetWidth;
-                bar.classList.add('scroll-active');
-            } else if (hasSoon) {
-                wrapper.style.background = "#000000";
-                wrapper.style.border = "2px solid #4cd964";
-                wrapper.style.boxShadow = "inset 0 0 8px rgba(76,217,100,0.3), 0 0 10px rgba(76,217,100,0.2)";
-                bar.style.color = "#4cd964";
-                bar.style.textShadow = "0 0 6px #4cd964";
-                bar.innerText = "✅ 全線車務運作正常";
-            } else {
-                wrapper.style.background = "#000000";
-                wrapper.style.border = "2px solid #4cd964";
-                wrapper.style.boxShadow = "inset 0 0 8px rgba(76,217,100,0.3), 0 0 10px rgba(76,217,100,0.2)";
-                bar.style.color = "#4cd964";
-                bar.style.textShadow = "0 0 6px #4cd964";
-                bar.innerText = "⏳ 正在獲取數據...";
-            }
-        }
+        let lastStatus = {
+            hasSoon: false,
+            trainsLength: 0,
+            lineName: ''
+        };
 
         function initMenu() {
             const sel = document.getElementById("line-select");
@@ -219,7 +166,6 @@
             const S = document.getElementById("station-select").value;
             if (!L || !S) return;
 
-            // ===== 模擬模式 =====
             if (SIMULATE) {
                 trains = [];
                 const now = new Date();
@@ -232,17 +178,15 @@
                     const t = new Date(now.getTime() + mins[i] * 60000);
                     trains.push({ dest: name, plat: (i % 3) + 1, time: t });
                 }
-                updateStatusBar();
+                updateStatusBar(true);
                 return;
             }
 
-            // ===== 真實 API 模式 =====
             try {
                 const url = "https://rt.data.gov.hk/v1/transport/mtr/getSchedule.php?line=" + L + "&sta=" + S;
                 const res = await fetch(url);
                 const json = await res.json();
                 trains = [];
-
                 if (json && json.status === 1 && json.data) {
                     let data = null;
                     const key = (L + "-" + S).toUpperCase();
@@ -258,7 +202,6 @@
                         }
                         if (!data && keys.length > 0) data = json.data[keys[0]];
                     }
-
                     if (data) {
                         for (let dir of ['UP', 'DOWN']) {
                             if (data[dir] && Array.isArray(data[dir])) {
@@ -276,19 +219,71 @@
                         }
                     }
                 }
-                updateStatusBar();
+                updateStatusBar(true);
             } catch (e) {
                 console.log("獲取數據失敗:", e);
-                const wrapper = document.getElementById("status-bar-wrapper");
-                const bar = document.getElementById("status-bar");
-                wrapper.style.background = "#ff3b30";
-                wrapper.style.border = "2px solid #ff3b30";
-                wrapper.style.boxShadow = "inset 0 0 10px rgba(255,59,48,0.5), 0 0 15px rgba(255,59,48,0.3)";
-                bar.style.color = "#ffffff";
-                bar.style.textShadow = "0 0 8px #ff3b30";
-                bar.innerText = `⚠️ 無法連接港鐵伺服器`;
+            }
+        }
+
+        function updateStatusBar(force = false) {
+            const wrapper = document.getElementById("status-bar-wrapper");
+            const bar = document.getElementById("status-bar");
+            const now = new Date();
+
+            let hasSoon = false;
+            for (let t of trains) {
+                const diff = (t.time - now) / 1000;
+                if (diff >= 0 && diff <= 900) {
+                    hasSoon = true;
+                    break;
+                }
+            }
+
+            const lineSel = document.getElementById("line-select");
+            const lineName = lineSel.options[lineSel.selectedIndex]?.text || "本線路";
+
+            const statusChanged = force ||
+                lastStatus.hasSoon !== hasSoon ||
+                lastStatus.trainsLength !== trains.length ||
+                lastStatus.lineName !== lineName;
+
+            if (!statusChanged) {
+                return;
+            }
+
+            lastStatus.hasSoon = hasSoon;
+            lastStatus.trainsLength = trains.length;
+            lastStatus.lineName = lineName;
+
+            bar.classList.remove('scroll-active');
+            bar.style.width = '100%';
+            bar.style.transform = 'none';
+            bar.style.marginLeft = '0';
+
+            // ===== 核心邏輯：只要 hasSoon 為 false，就顯示黃色（包含無數據） =====
+            if (!hasSoon) {
+                wrapper.style.background = "#ff9500";
+                wrapper.style.border = "2px solid #ff9500";
+                wrapper.style.boxShadow = "inset 0 0 10px rgba(255,149,0,0.5), 0 0 15px rgba(255,149,0,0.3)";
+                bar.style.color = "#000000";
+                bar.style.textShadow = "0 0 8px #ff9500, 0 0 12px #ff6a00";
+                if (trains.length === 0) {
+                    bar.innerText = `⚠️ ${lineName} 暫無班次 / 非營運時間`;
+                } else {
+                    bar.innerText = `⚠️ ${lineName} 已經進入非運營時間`;
+                }
                 void bar.offsetWidth;
+                bar.style.width = 'auto';
+                bar.style.marginLeft = '100%';
                 bar.classList.add('scroll-active');
+            } else {
+                // 綠色 - 正常營運（有 15 分鐘內的列車）
+                wrapper.style.background = "#000000";
+                wrapper.style.border = "2px solid #4cd964";
+                wrapper.style.boxShadow = "inset 0 0 8px rgba(76,217,100,0.3), 0 0 10px rgba(76,217,100,0.2)";
+                bar.style.color = "#4cd964";
+                bar.style.textShadow = "0 0 6px #4cd964";
+                bar.innerText = "✅ 全線車務運作正常";
             }
         }
 
@@ -337,7 +332,7 @@
                 </div>
             `;
 
-            updateStatusBar();
+            updateStatusBar(false);
         }
 
         function startMonitor() {
