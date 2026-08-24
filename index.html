@@ -114,11 +114,10 @@
 
         let trains = [];
         let timer1 = null, timer2 = null;
-        const SIMULATE = true;
+        const SIMULATE = false;
 
         let lastStatus = {
             hasSoon: false,
-            hasAnyTrain: false,
             lineName: ''
         };
 
@@ -164,15 +163,51 @@
         // ===== 查詢該路綫所有車站 =====
         async function fetchAllStationsData() {
             const L = document.getElementById("line-select").value;
-            if (!L) return;
+            if (!L) return null;
 
+            // 模擬模式：全部超過 15 分鐘
+            if (SIMULATE) {
+                const allStations = LINES[L]?.stations || {};
+                const codes = Object.keys(allStations);
+                const now = new Date();
+                let allTrains = [];
+                let hasSoon = false;
+
+                for (let i = 0; i < codes.length; i++) {
+                    const code = codes[i];
+                    // 每個車站生成 1-2 班列車，時間設為 100-190 分鐘後（超過 15 分鐘）
+                    const numTrains = 1 + Math.floor(Math.random() * 2);
+                    for (let j = 0; j < numTrains; j++) {
+                        const destCode = codes[(i + j + 1) % codes.length] || codes[0];
+                        const destName = DEST_NAMES[destCode] || destCode;
+                        // 全部設為 100-190 分鐘後
+                        const minutes = 100 + Math.floor(Math.random() * 90);
+                        const t = new Date(now.getTime() + minutes * 60000);
+                        allTrains.push({
+                            dest: destName,
+                            plat: (j % 3) + 1,
+                            time: t,
+                            station: code
+                        });
+                        const diff = (t - now) / 1000;
+                        if (diff >= -90 && diff <= 900) {
+                            hasSoon = true;
+                        }
+                    }
+                }
+
+                const currentStation = document.getElementById("station-select").value;
+                trains = allTrains.filter(t => t.station === currentStation);
+
+                return { hasSoon, allTrains };
+            }
+
+            // 真實模式
             const allStations = LINES[L]?.stations || {};
             const stationCodes = Object.keys(allStations);
             let allTrains = [];
-            let hasAnyTrain = false;
             let hasSoon = false;
 
-            // 逐個查詢每個車站
             for (let code of stationCodes) {
                 try {
                     const url = "https://rt.data.gov.hk/v1/transport/mtr/getSchedule.php?line=" + L + "&sta=" + code;
@@ -209,13 +244,10 @@
                                             time: trainTime,
                                             station: code
                                         });
-
-                                        // 檢查是否有列車在 -90~900 秒內（包含「列車到站中」）
                                         const diff = (trainTime - new Date()) / 1000;
                                         if (diff >= -90 && diff <= 900) {
                                             hasSoon = true;
                                         }
-                                        hasAnyTrain = true;
                                     }
                                 }
                             }
@@ -226,11 +258,10 @@
                 }
             }
 
-            // 更新 trains（用於顯示當前車站的列車）
             const currentStation = document.getElementById("station-select").value;
             trains = allTrains.filter(t => t.station === currentStation);
 
-            return { hasSoon, hasAnyTrain, allTrains };
+            return { hasSoon, allTrains };
         }
 
         async function fetchData() {
@@ -238,38 +269,17 @@
             const S = document.getElementById("station-select").value;
             if (!L || !S) return;
 
-            if (SIMULATE) {
-                trains = [];
-                const now = new Date();
-                const stations = LINES[L]?.stations || {};
-                const codes = Object.keys(stations);
-                const mins = [100, 170, 185];
-                for (let i = 0; i < mins.length; i++) {
-                    const code = codes[i % codes.length] || "TIK";
-                    const name = DEST_NAMES[code] || code;
-                    const t = new Date(now.getTime() + mins[i] * 60000);
-                    trains.push({ dest: name, plat: (i % 3) + 1, time: t, station: code });
-                }
-                const result = await fetchAllStationsData();
-                if (result) {
-                    updateStatusBar(true, result.hasSoon, result.hasAnyTrain);
-                }
-                return;
-            }
-
-            // 真實模式：查詢所有車站
             const result = await fetchAllStationsData();
             if (result) {
-                updateStatusBar(true, result.hasSoon, result.hasAnyTrain);
+                updateStatusBar(true, result.hasSoon);
             }
         }
 
-        function updateStatusBar(force = false, hasSoon = null, hasAnyTrain = null) {
+        function updateStatusBar(force = false, hasSoon = null) {
             const wrapper = document.getElementById("status-bar-wrapper");
             const bar = document.getElementById("status-bar");
             const now = new Date();
 
-            // 如果沒有傳入參數，從 trains 計算（向後兼容）
             if (hasSoon === null) {
                 hasSoon = false;
                 for (let t of trains) {
@@ -279,23 +289,18 @@
                         break;
                     }
                 }
-                hasAnyTrain = trains.length > 0;
             }
 
             const lineSel = document.getElementById("line-select");
             const lineName = lineSel.options[lineSel.selectedIndex]?.text || "本線路";
 
-            const statusChanged = force ||
-                lastStatus.hasSoon !== hasSoon ||
-                lastStatus.hasAnyTrain !== hasAnyTrain ||
-                lastStatus.lineName !== lineName;
+            const statusChanged = force || lastStatus.hasSoon !== hasSoon || lastStatus.lineName !== lineName;
 
             if (!statusChanged) {
                 return;
             }
 
             lastStatus.hasSoon = hasSoon;
-            lastStatus.hasAnyTrain = hasAnyTrain;
             lastStatus.lineName = lineName;
 
             bar.classList.remove('scroll-active');
@@ -304,19 +309,7 @@
             bar.style.marginLeft = '0';
 
             // ===== 核心邏輯 =====
-            // 1. 有列車在 -90~900 秒內（包含「列車到站中」）→ 綠色
-            // 2. 有列車數據（但全部超過 15 分鐘，尾班車已過）→ 綠色
-            // 3. 完全沒有任何列車數據 → 黃色
             if (hasSoon) {
-                // 🟢 綠色 - 有列車在 -90~900 秒內（包含列車到站中）
-                wrapper.style.background = "#000000";
-                wrapper.style.border = "2px solid #4cd964";
-                wrapper.style.boxShadow = "inset 0 0 8px rgba(76,217,100,0.3), 0 0 10px rgba(76,217,100,0.2)";
-                bar.style.color = "#4cd964";
-                bar.style.textShadow = "0 0 6px #4cd964";
-                bar.innerText = "✅ 全線車務運作正常";
-            } else if (hasAnyTrain) {
-                // 🟢 綠色 - 有列車數據但全部超過 15 分鐘（尾班車已過）
                 wrapper.style.background = "#000000";
                 wrapper.style.border = "2px solid #4cd964";
                 wrapper.style.boxShadow = "inset 0 0 8px rgba(76,217,100,0.3), 0 0 10px rgba(76,217,100,0.2)";
@@ -324,7 +317,6 @@
                 bar.style.textShadow = "0 0 6px #4cd964";
                 bar.innerText = "✅ 全線車務運作正常";
             } else {
-                // 🟡 黃色 - 完全沒有任何列車數據
                 wrapper.style.background = "#ff9500";
                 wrapper.style.border = "2px solid #ff9500";
                 wrapper.style.boxShadow = "inset 0 0 10px rgba(255,149,0,0.5), 0 0 15px rgba(255,149,0,0.3)";
@@ -382,6 +374,8 @@
                     非營運時間或暫無班次 TERMINATED
                 </div>
             `;
+
+            updateStatusBar(false);
         }
 
         function startMonitor() {
