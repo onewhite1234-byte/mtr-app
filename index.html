@@ -60,8 +60,17 @@
         .train-dest { font-size: 22px; font-weight: bold; color: #ff9500; text-shadow: 0 0 8px #ff9500; }
         .train-plat { font-size: 13px; color: #8e8e93; margin-top: 5px; }
         .train-time { color: #ff9500; font-size: 26px; font-weight: bold; text-shadow: 0 0 8px #ff9500; font-family: monospace; }
-        .arriving { color: #4cd964 !important; text-shadow: 0 0 8px #4cd964 !important; animation: blink 0.8s infinite; }
-        @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.1; } }
+
+        .arriving { 
+            color: #4cd964 !important; 
+            text-shadow: 0 0 8px #4cd964, 0 0 15px #4cd964 !important; 
+            animation: blink 0.8s infinite; 
+        }
+        @keyframes blink { 
+            0%, 100% { opacity: 1; } 
+            50% { opacity: 0.1; } 
+        }
+
         .loading-text { text-align: center; color: #333; padding: 40px 0; font-size: 16px; }
     </style>
 </head>
@@ -114,7 +123,7 @@
 
         let trains = [];
         let timer1 = null, timer2 = null;
-        const SIMULATE = false;
+        const SIMULATE = false;  // ✅ 關閉模擬，使用真實 API
 
         let lastStatus = {
             hasSoon: false,
@@ -160,49 +169,12 @@
             if (timer2) { clearInterval(timer2); timer2 = null; }
         }
 
-        // ===== 查詢該路綫所有車站 =====
+        // ===== 查詢該路綫所有車站（以路綫計算） =====
         async function fetchAllStationsData() {
             const L = document.getElementById("line-select").value;
             if (!L) return null;
 
-            // 模擬模式：全部超過 15 分鐘
-            if (SIMULATE) {
-                const allStations = LINES[L]?.stations || {};
-                const codes = Object.keys(allStations);
-                const now = new Date();
-                let allTrains = [];
-                let hasSoon = false;
-
-                for (let i = 0; i < codes.length; i++) {
-                    const code = codes[i];
-                    // 每個車站生成 1-2 班列車，時間設為 100-190 分鐘後（超過 15 分鐘）
-                    const numTrains = 1 + Math.floor(Math.random() * 2);
-                    for (let j = 0; j < numTrains; j++) {
-                        const destCode = codes[(i + j + 1) % codes.length] || codes[0];
-                        const destName = DEST_NAMES[destCode] || destCode;
-                        // 全部設為 100-190 分鐘後
-                        const minutes = 100 + Math.floor(Math.random() * 90);
-                        const t = new Date(now.getTime() + minutes * 60000);
-                        allTrains.push({
-                            dest: destName,
-                            plat: (j % 3) + 1,
-                            time: t,
-                            station: code
-                        });
-                        const diff = (t - now) / 1000;
-                        if (diff >= -90 && diff <= 900) {
-                            hasSoon = true;
-                        }
-                    }
-                }
-
-                const currentStation = document.getElementById("station-select").value;
-                trains = allTrains.filter(t => t.station === currentStation);
-
-                return { hasSoon, allTrains };
-            }
-
-            // 真實模式
+            // 真實模式：逐個查詢每個車站
             const allStations = LINES[L]?.stations || {};
             const stationCodes = Object.keys(allStations);
             let allTrains = [];
@@ -308,7 +280,7 @@
             bar.style.transform = 'none';
             bar.style.marginLeft = '0';
 
-            // ===== 核心邏輯 =====
+            // ===== 以路綫計算 =====
             if (hasSoon) {
                 wrapper.style.background = "#000000";
                 wrapper.style.border = "2px solid #4cd964";
