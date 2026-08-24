@@ -49,25 +49,184 @@
 
     <script>
         const MTR_DATA = {
-            "TWL": { name: "荃灣綫", stations: {"TSW":"荃灣", "KWH":"葵興", "KWF":"葵芳", "LAK":"荔景", "MEF":"美孚", "LCK":"荔枝角", "CSW":"長沙灣", "SSP":"深水埗", "PRE":"太子", "MOK":"旺角", "YMT":"油麻地", "JOR":"佐敦", "TST":"尖沙咀", "ADM":"金鐘", "CEN":"中環"} },
-            "KTL": { name: "觀塘綫", stations: {"TIK":"調景嶺", "YAT":"油塘", "LAT":"藍田", "KWT":"觀塘", "APM":"牛頭角", "KOB":"九龍灣", "CHH":"彩虹", "DIH":"鑽石山", "WTS":"黃大仙", "LOF":"樂富", "KOT":"九龍塘", "SKM":"石硤尾", "PRE":"太子", "MOK":"旺角", "YMT":"油麻地", "HOM":"何文田", "WHA":"黃埔"} },
-            "ISL": { name: "港島綫", stations: {"CHW":"柴灣", "SKW":"筲箕灣", "SWH":"西灣河", "TAK":"太古", "QUB":"鰂魚涌", "NOP":"北角", "FOH":"炮台山", "TIH":"天后", "CWB":"銅鑼灣", "WAC":"灣仔", "ADM":"金鐘", "CEN":"中環", "SHW":"上環", "SYP":"西營盤", "HKU":"香港大學", "KET":"堅尼地城"} },
-            "TKL": { name: "將軍澳綫", stations: {"POA":"寶琳", "LHP":"康城", "HAH":"坑口", "TKO":"將軍澳", "TIK":"調景嶺", "YAT":"油塘", "QUB":"鰂魚涌", "NOP":"北角"} },
-            "TCL": { name: "東涌綫", stations: {"TUC":"東涌", "SUN":"欣澳", "TSY":"青衣", "LAK":"荔景", "NAC":"南昌", "OLY":"奧運", "KOW":"九龍", "HOK":"香港"} },
-            "SIL": { name: "南港島綫", stations: {"SOH":"海怡半島", "LET":"利東", "WCH":"黃竹坑", "OCP":"海洋公園", "ADM":"金鐘"} },
-            "DRL": { name: "迪士尼綫", stations: {"SUN":"欣澳", "DIS":"迪士尼"} },
-            "AEL": { name: "機場快綫", stations: {"HOK":"香港", "KOW":"九龍", "TSY":"青衣", "AIR":"機場", "AWE":"博覽館"} },
-            "EAL": { name: "東鐵綫", stations: {"LOW":"羅湖", "LMC":"落馬洲", "SHS":"上水", "FAN":"粉嶺", "TWO":"太和", "TAP":"大埔墟", "UNI":"大學", "RAC":"馬場", "FOT":"火炭", "SHT":"沙田", "TAW":"大圍", "KOT":"九龍塘", "MKK":"旺角東", "HUH":"紅磡", "EXC":"會展", "ADM":"金鐘"} },
-            "TML": { name: "屯馬綫", stations: {"TUM":"屯門", "SIH":"兆康", "TIS":"天水圍", "LOP":"朗屏", "YUL":"元朗", "KSR":"錦上路", "TWW":"荃灣西", "MEF":"美孚", "NAC":"南昌", "AUS":"柯士甸", "ETS":"尖東", "HUH":"紅磡", "HOM":"何文田", "TKW":"土瓜灣", "SUW":"宋皇臺", "CKA":"啟德", "DIH":"鑽石山", "HIK":"顯徑", "TAW":"大圍", "STW":"沙田圍", "CIO":"第一城", "SHM":"石門", "TSH":"大水坑", "HEO":"恆安", "MOS":"馬鞍山", "WKS":"烏溪沙"} }
+            "TWL": { 
+                name: "荃灣綫 Tsuen Wan Line", 
+                stations: {
+                    "TSW": "荃灣 Tsuen Wan", 
+                    "TWH": "大窩口 Tai Wo Hau",
+                    "KWH": "葵興 Kwai Hing", 
+                    "KWF": "葵芳 Kwai Fong", 
+                    "LAK": "荔景 Lai King", 
+                    "MEF": "美孚 Mei Foo", 
+                    "LCK": "荔枝角 Lai Chi Kok", 
+                    "CSW": "長沙灣 Cheung Sha Wan", 
+                    "SSP": "深水埗 Sham Shui Po", 
+                    "PRE": "太子 Prince Edward", 
+                    "MOK": "旺角 Mong Kok", 
+                    "YMT": "油麻地 Yau Ma Tei", 
+                    "JOR": "佐敦 Jordan", 
+                    "TST": "尖沙咀 Tsim Sha Tsui", 
+                    "ADM": "金鐘 Admiralty", 
+                    "CEN": "中環 Central"
+                } 
+            },
+            "KTL": { 
+                name: "觀塘綫 Kwun Tong Line", 
+                stations: {
+                    "TIK": "調景嶺 Tiu Keng Leng", 
+                    "YAT": "油塘 Yau Tong", 
+                    "LAT": "藍田 Lam Tin", 
+                    "KWT": "觀塘 Kwun Tong", 
+                    "APM": "牛頭角 Ngau Tau Kok", 
+                    "KOB": "九龍灣 Kowloon Bay", 
+                    "CHH": "彩虹 Choi Hung", 
+                    "DIH": "鑽石山 Diamond Hill", 
+                    "WTS": "黃大仙 Wong Tai Sin", 
+                    "LOF": "樂富 Lok Fu", 
+                    "KOT": "九龍塘 Kowloon Tong", 
+                    "SKM": "石硤尾 Shek Kip Mei", 
+                    "PRE": "太子 Prince Edward", 
+                    "MOK": "旺角 Mong Kok", 
+                    "YMT": "油麻地 Yau Ma Tei", 
+                    "HOM": "何文田 Ho Man Tin", 
+                    "WHA": "黃埔 Whampoa"
+                } 
+            },
+            "ISL": { 
+                name: "港島綫 Island Line", 
+                stations: {
+                    "CHW": "柴灣 Chai Wan", 
+                    "SKW": "筲箕灣 Shau Kei Wan", 
+                    "SWH": "西灣河 Sai Wan Ho", 
+                    "TAK": "太古 Tai Koo", 
+                    "QUB": "鰂魚涌 Quarry Bay", 
+                    "NOP": "北角 North Point", 
+                    "FOH": "炮台山 Fortress Hill", 
+                    "TIH": "天后 Tin Hau", 
+                    "CWB": "銅鑼灣 Causeway Bay", 
+                    "WAC": "灣仔 Wan Chai", 
+                    "ADM": "金鐘 Admiralty", 
+                    "CEN": "中環 Central", 
+                    "SHW": "上環 Sheung Wan", 
+                    "SYP": "西營盤 Sai Ying Pun", 
+                    "HKU": "香港大學 HKU", 
+                    "KET": "堅尼地城 Kennedy Town"
+                } 
+            },
+            "TKL": { 
+                name: "將軍澳綫 Tseung Kwan O Line", 
+                stations: {
+                    "POA": "寶琳 Po Lam", 
+                    "LHP": "康城 LOHAS Park", 
+                    "HAH": "坑口 Hang Hau", 
+                    "TKO": "將軍澳 Tseung Kwan O", 
+                    "TIK": "調景嶺 Tiu Keng Leng", 
+                    "YAT": "油塘 Yau Tong", 
+                    "QUB": "鰂魚涌 Quarry Bay", 
+                    "NOP": "北角 North Point"
+                } 
+            },
+            "TCL": { 
+                name: "東涌綫 Tung Chung Line", 
+                stations: {
+                    "TUC": "東涌 Tung Chung", 
+                    "SUN": "欣澳 Sunny Bay", 
+                    "TSY": "青衣 Tsing Yi", 
+                    "LAK": "荔景 Lai King", 
+                    "NAC": "南昌 Nam Cheong", 
+                    "OLY": "奧運 Olympic", 
+                    "KOW": "九龍 Kowloon", 
+                    "HOK": "香港 Hong Kong"
+                } 
+            },
+            "SIL": { 
+                name: "南港島綫 South Island Line", 
+                stations: {
+                    "SOH": "海怡半島 South Horizons", 
+                    "LET": "利東 Lei Tung", 
+                    "WCH": "黃竹坑 Wong Chuk Hang", 
+                    "OCP": "海洋公園 Ocean Park", 
+                    "ADM": "金鐘 Admiralty"
+                } 
+            },
+            "DRL": { 
+                name: "迪士尼綫 Disneyland Resort Line", 
+                stations: {
+                    "SUN": "欣澳 Sunny Bay", 
+                    "DIS": "迪士尼 Disneyland Resort"
+                } 
+            },
+            "AEL": { 
+                name: "機場快綫 Airport Express", 
+                stations: {
+                    "HOK": "香港 Hong Kong", 
+                    "KOW": "九龍 Kowloon", 
+                    "TSY": "青衣 Tsing Yi", 
+                    "AIR": "機場 Airport", 
+                    "AWE": "博覽館 AsiaWorld-Expo"
+                } 
+            },
+            "EAL": { 
+                name: "東鐵綫 East Rail Line", 
+                stations: {
+                    "LOW": "羅湖 Lo Wu", 
+                    "LMC": "落馬洲 Lok Ma Chau", 
+                    "SHS": "上水 Sheung Shui", 
+                    "FAN": "粉嶺 Fanling", 
+                    "TWO": "太和 Tai Wo", 
+                    "TAP": "大埔墟 Tai Po Market", 
+                    "UNI": "大學 University", 
+                    "RAC": "馬場 Racecourse", 
+                    "FOT": "火炭 Fo Tan", 
+                    "SHT": "沙田 Sha Tin", 
+                    "TAW": "大圍 Tai Wai", 
+                    "KOT": "九龍塘 Kowloon Tong", 
+                    "MKK": "旺角東 Mong Kok East", 
+                    "HUH": "紅磡 Hung Hom", 
+                    "EXC": "會展 Exhibition Centre", 
+                    "ADM": "金鐘 Admiralty"
+                } 
+            },
+            "TML": { 
+                name: "屯馬綫 Tuen Ma Line", 
+                stations: {
+                    "TUM": "屯門 Tuen Mun", 
+                    "SIH": "兆康 Siu Hong", 
+                    "TIS": "天水圍 Tin Shui Wai", 
+                    "LGP": "朗屏 Long Ping",
+                    "YUL": "元朗 Yuen Long", 
+                    "KSR": "錦上路 Kam Sheung Road", 
+                    "TWW": "荃灣西 Tsuen Wan West", 
+                    "MEF": "美孚 Mei Foo", 
+                    "NAC": "南昌 Nam Cheong", 
+                    "AUS": "柯士甸 Austin", 
+                    "ETS": "尖東 East Tsim Sha Tsui", 
+                    "HUH": "紅磡 Hung Hom", 
+                    "HOM": "何文田 Ho Man Tin", 
+                    "TKW": "土瓜灣 To Kwa Wan", 
+                    "SUW": "宋皇臺 Sung Wong Toi", 
+                    "CKA": "啟德 Kai Tak", 
+                    "DIH": "鑽石山 Diamond Hill", 
+                    "HIK": "顯徑 Hin Keng", 
+                    "TAW": "大圍 Tai Wai", 
+                    "STW": "沙田圍 Sha Tin Wai", 
+                    "CIO": "第一城 City One", 
+                    "SHM": "石門 Shek Mun", 
+                    "TSH": "大水坑 Tai Shui Hang", 
+                    "HEO": "恆安 Heng On", 
+                    "MOS": "馬鞍山 Ma On Shan", 
+                    "WKS": "烏溪沙 Wu Kai Sha"
+                } 
+            }
         };
 
         const GLOBAL_DEST = {
-            "NOP":"北角", "WHA":"黃埔", "HOM":"何文田", "YMT":"油麻地", "MOK":"旺角", "PRE":"太子", "SKM":"石硤尾", "KOT":"九龍塘", "LOF":"樂富", "WTS":"黃大仙", "DIH":"鑽石山", "CHH":"彩虹", "KOB":"九龍灣", "APM":"牛頭角", "KWT":"觀塘", "LAT":"藍田", "YAT":"油塘", "TIK":"調景嶺",
-            "KET":"堅尼地城", "HKU":"香港大學", "SYP":"西營盤", "SHW":"上環", "CEN":"中環", "ADM":"金鐘", "WAC":"灣仔", "CWB":"銅鑼灣", "TIH":"天后", "FOH":"炮台山", "QUB":"鰂魚涌", "TAK":"太古", "SWH":"西灣河", "SKW":"筲箕灣", "CHW":"柴灣",
-            "JOR":"佐敦", "SSP":"深水埗", "CSW":"長沙灣", "LCK":"荔枝角", "MEF":"美孚", "LAK":"荔景", "KWF":"葵芳", "KWH":"葵興", "TSW":"荃灣", "TKO":"將軍澳", "LHP":"康城", "HAH":"坑口", "POA":"寶琳",
-            "TUM":"屯門", "SIH":"兆康", "TIS":"天水圍", "LOP":"朗屏", "YUL":"元朗", "KSR":"錦上路", "TWW":"荃灣西", "NAC":"南昌", "OLY":"奧運", "AUS":"柯士甸", "ETS":"尖東", "HUH":"紅磡", "TKW":"土瓜灣", "SUW":"宋皇臺", "CKA":"啟德", "HIK":"顯示", "TAW":"大圍", "STW":"沙田圍", "CIO":"第一城", "SHM":"石門", "TSH":"大水坑", "HEO":"恆安", "MOS":"馬鞍山", "WKS":"烏溪沙",
-            "EXC":"會展", "MKK":"旺角東", "SHT":"沙田", "FOT":"火炭", "RAC":"馬場", "UNI":"大學", "TAP":"大埔墟", "TWO":"太和", "FAN":"粉嶺", "SHS":"上水", "LOW":"羅湖", "LMC":"落馬洲", "HOK":"香港", "KOW":"九龍", "TSY":"青衣", "SUN":"欣澳", "TUC":"東涌", "AIR":"機場", "AWE":"博覽館", "DIS":"迪士尼",
-            "OCP":"海洋公園", "WCH":"黃竹坑", "LET":"利東", "SOH":"海怡半島"
+            "NOP":"北角 North Point", "WHA":"黃埔 Whampoa", "HOM":"何文田 Ho Man Tin", "YMT":"油麻地 Yau Ma Tei", "MOK":"旺角 Mong Kok", "PRE":"太子 Prince Edward", "SKM":"石硤尾 Shek Kip Mei", "KOT":"九龍塘 Kowloon Tong", "LOF":"樂富 Lok Fu", "WTS":"黃大仙 Wong Tai Sin", "DIH":"鑽石山 Diamond Hill", "CHH":"彩虹 Choi Hung", "KOB":"九龍灣 Kowloon Bay", "APM":"牛頭角 Ngau Tau Kok", "KWT":"觀塘 Kwun Tong", "LAT":"藍田 Lam Tin", "YAT":"油塘 Yau Tong", "TIK":"調景嶺 Tiu Keng Leng",
+            "KET":"堅尼地城 Kennedy Town", "HKU":"香港大學 HKU", "SYP":"西營盤 Sai Ying Pun", "SHW":"上環 Sheung Wan", "CEN":"中環 Central", "ADM":"金鐘 Admiralty", "WAC":"灣仔 Wan Chai", "CWB":"銅鑼灣 Causeway Bay", "TIH":"天后 Tin Hau", "FOH":"炮台山 Fortress Hill", "QUB":"鰂魚涌 Quarry Bay", "TAK":"太古 Tai Koo", "SWH":"西灣河 Sai Wan Ho", "SKW":"筲箕灣 Shau Kei Wan", "CHW":"柴灣 Chai Wan",
+            "JOR":"佐敦 Jordan", "SSP":"深水埗 Sham Shui Po", "CSW":"長沙灣 Cheung Sha Wan", "LCK":"荔枝角 Lai Chi Kok", "MEF":"美孚 Mei Foo", "LAK":"荔景 Lai King", "KWF":"葵芳 Kwai Fong", "KWH":"葵興 Kwai Hing", "TSW":"荃灣 Tsuen Wan", "TWH":"大窩口 Tai Wo Hau", "TKO":"將軍澳 Tseung Kwan O", "LHP":"康城 LOHAS Park", "HAH":"坑口 Hang Hau", "POA":"寶琳 Po Lam",
+            "TUM":"屯門 Tuen Mun", "SIH":"兆康 Siu Hong", "TIS":"天水圍 Tin Shui Wai", "LGP":"朗屏 Long Ping", "YUL":"元朗 Yuen Long", "KSR":"錦上路 Kam Sheung Road", "TWW":"荃灣西 Tsuen Wan West", "NAC":"南昌 Nam Cheong", "OLY":"奧運 Olympic", "AUS":"柯士甸 Austin", "ETS":"尖東 East Tsim Sha Tsui", "HUH":"紅磡 Hung Hom", "TKW":"土瓜灣 To Kwa Wan", "SUW":"宋皇臺 Sung Wong Toi", "CKA":"啟德 Kai Tak", "HIK":"顯徑 Hin Keng", "TAW":"大圍 Tai Wai", "STW":"沙田圍 Sha Tin Wai", "CIO":"第一城 City One", "SHM":"石門 Shek Mun", "TSH":"大水坑 Tai Shui Hang", "HEO":"恆安 Heng On", "MOS":"馬鞍山 Ma On Shan", "WKS":"烏溪沙 Wu Kai Sha",
+            "EXC":"會展 Exhibition Centre", "MKK":"旺角東 Mong Kok East", "SHT":"沙田 Sha Tin", "FOT":"火炭 Fo Tan", "RAC":"馬場 Racecourse", "UNI":"大學 University", "TAP":"大埔墟 Tai Po Market", "TWO":"太和 Tai Wo", "FAN":"粉嶺 Fanling", "SHS":"上水 Sheung Shui", "LOW":"羅湖 Lo Wu", "LMC":"落馬洲 Lok Ma Chau", "HOK":"香港 Hong Kong", "KOW":"九龍 Kowloon", "TSY":"青衣 Tsing Yi", "SUN":"欣澳 Sunny Bay", "TUC":"東涌 Tung Chung", "AIR":"機場 Airport", "AWE":"博覽館 AsiaWorld-Expo", "DIS":"迪士尼 Disneyland Resort",
+            "OCP":"海洋公園 Ocean Park", "WCH":"黃竹坑 Wong Chuk Hang", "LET":"利東 Lei Tung", "SOH":"海怡半島 South Horizons"
         };
 
         let trains = [], apiInterval = null, uiInterval = null;
