@@ -210,8 +210,8 @@
                                         const destName = DEST_NAMES[destCode] || destCode;
                                         const timeStr = t.time.replace(" ", "T") + "+08:00";
                                         const trainTime = new Date(timeStr);
-                                        // ===== 提早 135 秒（2分15秒） =====
-                                        trainTime.setSeconds(trainTime.getSeconds() - 135);
+                                        // ===== 早 2 分鐘（-105 秒） =====
+                                        trainTime.setSeconds(trainTime.getSeconds() - 105);
                                         // ================================
                                         allTrains.push({
                                             dest: destName,
